@@ -8,5 +8,7 @@ export default defineConfig({
     globalSetup: './test/global-setup.ts',
     env: { DATABASE_URL: testDb, NODE_ENV: 'test' },
     fileParallelism: false,
+    // github-actions reporter turns failures into PR/commit annotations.
+    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default'],
   },
 });

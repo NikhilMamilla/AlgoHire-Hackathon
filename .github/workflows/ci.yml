@@ -36,7 +36,19 @@ jobs:
         working-directory: apps/api
       - run: npx prisma migrate deploy
         working-directory: apps/api
-      - run: npm test
+      - name: npm test
+        shell: bash # -eo pipefail, so a failing test still fails the step through tee
+        run: |
+          npm test 2>&1 | tee test.log
+          echo "::notice title=vitest::$(sed 's/\x1b\[[0-9;]*m//g' test.log | grep -E '^ *(Test Files|Tests) ' | tr -s ' ' | paste -sd ' ')"
+      - name: curl walkthrough (DRAFT -> APPROVED)
+        shell: bash
+        working-directory: apps/api
+        run: |
+          npx tsx src/server.ts > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:4000/api/health >/dev/null && break; sleep 1; done
+          ../../scripts/walkthrough.sh | tee walk.log
+          echo "::notice title=walkthrough::$(tail -1 walk.log)"
       - run: npm run build -w apps/web
 
   docker:
