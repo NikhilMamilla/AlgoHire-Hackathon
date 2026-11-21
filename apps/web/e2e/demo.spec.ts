@@ -145,7 +145,10 @@ test('demo flow: upload, live review, issue, verify, revoke', async ({ browser }
     await approve(meera);
     await expect(statusBadge(meera)).toHaveText('State review');
     await shot(meera, '04-batch-detail-review');
-    await farah.goto(batchUrl);
+    // Farah's home screen must list the batch waiting for her, linking to it.
+    await farah.goto('/state');
+    await farah.locator('.card:has(h2:has-text("Waiting for your approval"))').getByRole('link', { name: course }).click();
+    await expect(farah).toHaveURL(new RegExp(`${batchUrl}$`));
     await approve(farah);
   });
 

@@ -48,7 +48,7 @@ everyone else on **Batches**), and **Log out** in the top bar returns to sign-in
 
 1. Anika: **New batch**, upload `invalid.csv` (row errors, nothing saved), upload `valid-10.csv`, **Submit for review**.
 2. Dev (in another browser or a private window): the batch appears in **Waiting for me** live. **Approve**. Then Meera approves.
-3. Farah: **Approve**. The worker issues 10 certificates; WhatsApp delivery statuses update live.
+3. Farah: the batch is under **Waiting for your approval** on State overview. Open it, **Approve**. (Batches of 50+ candidates go to Neha in quality review first; `valid-10.csv` skips it.) The worker issues 10 certificates; WhatsApp delivery statuses update live.
 4. Click a certificate number: the public **/verify** page shows **Valid**. As Farah, **Revoke** it with a reason;
    reloading verify shows **Revoked**.
 5. Farah: **WhatsApp outbox** shows the simulated messages; **State overview** shows counts and escalated batches.

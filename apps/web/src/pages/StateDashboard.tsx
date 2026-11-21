@@ -18,6 +18,10 @@ export default function StateDashboard() {
   const now = useNow();
   const stats = useAsync(() => api<Stats>('/stats'), []);
   const stuck = useAsync(() => api<{ batches: BatchRow[] }>('/batches?escalated=true').then((r) => r.batches), []);
+  const waiting = useAsync(
+    () => api<{ batches: BatchRow[] }>('/batches?status=STATE_REVIEW').then((r) => r.batches.filter((b) => !b.decidedByMe)),
+    [],
+  );
   const activity = useAsync(() => api<{ audit: AuditRow[] }>('/audit?limit=10').then((r) => r.audit), []);
   const people = useAsync(
     () => api<{ users: DemoUser[] }>('/auth/demo-users').then((r) => new Map(r.users.map((u) => [u.id, u.name]))),
@@ -26,6 +30,7 @@ export default function StateDashboard() {
   useLiveReload(() => {
     void stats.reload();
     void stuck.reload();
+    void waiting.reload();
     void activity.reload();
   });
   const [busy, setBusy] = useState(false);
@@ -76,6 +81,40 @@ export default function StateDashboard() {
           />
         </div>
       )}
+
+      <div className="card">
+        <h2>Waiting for your approval</h2>
+        {waiting.error && <Alert>{errorText(waiting.error)}</Alert>}
+        {waiting.loading && !waiting.data ? (
+          <Skeleton rows={2} />
+        ) : !waiting.data?.length ? (
+          <Empty title="Nothing to approve">Batches appear here once the district (and quality, for large batches) has approved them.</Empty>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Batch</th>
+                  <th>Candidates</th>
+                  <th>Waiting</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waiting.data.map((b) => (
+                  <tr key={b.id}>
+                    <td>
+                      <Link to={`/batches/${b.id}`}>{b.courseName}</Link>
+                      <div className="muted small">{b.centre?.name}</div>
+                    </td>
+                    <td>{b.candidateCount}</td>
+                    <td>{since(b.stageEnteredAt, now)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="dash-grid">
         <div className="card">
