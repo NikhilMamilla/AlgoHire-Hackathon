@@ -117,9 +117,9 @@ queue, so a WhatsApp slowdown never delays issuance.
   an expiry timestamp in the HMAC is planned.
 - **Production (planned):** pre-render each PDF at issuance into a private S3 bucket (`certificates/{certNo}.pdf`,
   SSE-KMS, no public ACL). The download endpoint checks the same rules and status = VALID, then returns a 5-minute
-  pre-signed URL. Revocation tags the object, and a lifecycle rule can move it to a restricted prefix. Before that,
-  compress the background image: each PDF is about 2.3 MB today because the 2.3 MB PNG is embedded every time.
-  A JPEG version should bring that to roughly 200–300 KB (estimate).
+  pre-signed URL. Revocation tags the object, and a lifecycle rule can move it to a restricted prefix. Each PDF is
+  about 140 KB (measured on a sample render): the background is a 128 KB JPEG embedded as-is (DCTDecode, no
+  re-encoding), plus the text and QR code.
 - **Public verification:** returns only status, name, course, centre and dates (an allow-listed key set, tested). No
   phone, candidateRef, internal ids or PDF. Certificate numbers are `CF-` + 10 Crockford base32 characters (50 random
   bits), so they can't be enumerated, and `/api/public/*` is rate-limited per IP in Redis (`PUBLIC_RATE_LIMIT`, default
@@ -169,10 +169,10 @@ queue, so a WhatsApp slowdown never delays issuance.
 | Read replica (optional at launch) | db.t4g.medium | 60 |
 | ElastiCache Redis | cache.t4g.small primary + replica | 50 |
 | ALB | 1 | 25 |
-| S3 + CloudFront | ~100k PDFs/year at ~250 KB (after compressing the background), plus the static site | 5–15 |
+| S3 + CloudFront | ~100k PDFs/year at ~140 KB each (~14 GB/year), plus the static site | 5–10 |
 | NAT gateway + data transfer | 1 NAT | 40 |
 | CloudWatch logs/metrics/alarms | | 30 |
-| **Infra total** | | **~$460–540** |
+| **Infra total** | | **~$460–535** |
 | WhatsApp messages | ~8,000–30,000/month (utility template, India) | roughly $15–60, depending on the BSP |
 
 These are list-price estimates, not quotes.
@@ -185,7 +185,7 @@ These are list-price estimates, not quotes.
   and our volume is small. The cost is that Redis must be persistent and highly available, which is why we keep AOF,
   run a replica and use Postgres-driven reconciliation.
 - **On-demand PDF rendering (current) vs pre-rendered S3 files (planned):** on demand has no storage and no stale files,
-  but the peak download burst after WhatsApp delivery is CPU-heavy, and each file is large today. Pre-rendering moves
+  but the peak download burst after WhatsApp delivery is CPU-heavy. Pre-rendering moves
   that cost into the queue, where it can be throttled.
 - **Cost-saving levers:** Fargate Spot for workers (they're interruption-safe because jobs are idempotent), and
   scaling workers to 1 outside results days.

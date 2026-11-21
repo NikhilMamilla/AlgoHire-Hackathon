@@ -14,11 +14,11 @@ export type CertificateView = {
 
 const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
-// Full-page background (1492×1054 px, same aspect as A4 landscape). Read once, reused for every render.
+// Full-page background (1492×1054 px JPEG, ~130 KB, same aspect as A4 landscape). Read once, reused for every render.
 let background: Buffer | undefined;
-const backgroundImage = () => (background ??= readFileSync(new URL('../../assets/certificate-bg.png', import.meta.url)));
+const backgroundImage = () => (background ??= readFileSync(new URL('../../assets/certificate-bg.jpg', import.meta.url)));
 
-// Clean zones of certificate-bg.png in PDF points (image px × 841.89/1492).
+// Clean zones of certificate-bg.jpg in PDF points (image px × 841.89/1492).
 const ZONE = {
   topRuleY: 109, // ornament line under the heading
   bottomRuleY: 503, // ornament line above the footer
