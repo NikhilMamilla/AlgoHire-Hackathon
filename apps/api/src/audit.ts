@@ -16,7 +16,8 @@ export type AuditAction =
   | 'DELIVERY_FAILED'
   | 'DELIVERY_CANCELLED'
   | 'DELIVERIES_REQUEUED'
-  | 'CERTIFICATE_REVOKED';
+  | 'CERTIFICATE_REVOKED'
+  | 'BATCH_ESCALATED';
 
 /**
  * Pass the SAME transaction client as the business change, so the change and its

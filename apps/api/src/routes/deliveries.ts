@@ -3,6 +3,7 @@ import { audit } from '../audit.js';
 import { currentUser, requireAuth, requireRole } from '../auth.js';
 import { ah, prisma } from '../lib.js';
 import { enqueueDeliveries } from '../queues.js';
+import { publish } from '../realtime.js';
 
 export const deliveriesRouter = Router();
 
@@ -23,6 +24,8 @@ deliveriesRouter.post(
     });
     // Unique job ids: the old failed jobs are still kept (removeOnFail) under their original ids.
     await enqueueDeliveries(ids, `retry-${Date.now()}`);
+    // Spans batches: only STATE (who sees everything) receives an event with no centre/district.
+    if (ids.length) await publish({ type: 'deliveries.requeued', districtId: '', centreId: '' });
     res.json({ requeued: ids.length });
   }),
 );

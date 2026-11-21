@@ -2,13 +2,15 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 import { pinoHttp } from 'pino-http';
 import { errorHandler, notFound } from './errors.js';
-import { logger, prisma, redis } from './lib.js';
+import { ah, logger, prisma, redis } from './lib.js';
+import { eventsHandler } from './realtime.js';
 import { auditRouter } from './routes/audit.js';
 import { authRouter } from './routes/auth.js';
 import { batchesRouter } from './routes/batches.js';
 import { certificatesRouter } from './routes/certificates.js';
 import { deliveriesRouter } from './routes/deliveries.js';
 import { publicRouter } from './routes/public.js';
+import { stateRouter } from './routes/state.js';
 
 export function createApp() {
   const app = express();
@@ -54,6 +56,8 @@ export function createApp() {
   app.use('/api', certificatesRouter);
   app.use('/api', publicRouter);
   app.use('/api', auditRouter);
+  app.use('/api', stateRouter);
+  app.get('/api/events', ah(eventsHandler));
 
   app.use(notFound);
   app.use(errorHandler);

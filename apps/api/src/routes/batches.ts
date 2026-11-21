@@ -8,6 +8,7 @@ import { decide, EDITABLE, lockBatch, submitBatch } from '../batchWorkflow.js';
 import { parseCandidatesCsv } from '../csv.js';
 import { HttpError } from '../errors.js';
 import { ah, prisma } from '../lib.js';
+import { publishBatch } from '../realtime.js';
 import { assertVisible, batchNotFound, batchScope } from '../scope.js';
 
 export const batchesRouter = Router();
@@ -31,6 +32,7 @@ batchesRouter.post(
       await audit(tx, { actorId: user.id, action: 'BATCH_CREATED', entityType: 'Batch', entityId: b.id, metadata: { courseName } });
       return b;
     });
+    await publishBatch('batch.created', batch);
     res.status(201).json({ batch });
   }),
 );
@@ -38,21 +40,37 @@ batchesRouter.post(
 batchesRouter.get(
   '/batches',
   ah(async (req, res) => {
-    const { status } = z.object({ status: z.nativeEnum(BatchStatus).optional() }).parse(req.query);
+    const user = currentUser(req);
+    const q = z
+      .object({ status: z.nativeEnum(BatchStatus).optional(), escalated: z.enum(['true', 'false']).optional() })
+      .parse(req.query);
+    if (q.escalated && user.role !== 'STATE') throw new HttpError(403, 'FORBIDDEN', 'Only STATE can filter escalated batches');
     const batches = await prisma.batch.findMany({
-      where: { AND: [batchScope(currentUser(req)), status ? { status } : {}] },
+      where: {
+        AND: [
+          batchScope(user),
+          q.status ? { status: q.status } : {},
+          // escalatedAt is cleared on every stage change, so non-null means "stuck in the current stage".
+          q.escalated === 'true' ? { escalatedAt: { not: null } } : {},
+        ],
+      },
       include: {
         _count: { select: { candidates: true } },
-        decisions: { where: { type: 'APPROVE' }, select: { stage: true, round: true } },
+        centre: { select: { name: true } },
+        decisions: { select: { stage: true, round: true, type: true, actorId: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
     res.json({
-      batches: batches.map(({ _count, decisions, ...b }) => ({
-        ...b,
-        candidateCount: _count.candidates,
-        approvals: decisions.filter((d) => d.round === b.round && d.stage === STAGE_OF[b.status]).length,
-      })),
+      batches: batches.map(({ _count, decisions, ...b }) => {
+        const current = decisions.filter((d) => d.round === b.round && d.stage === STAGE_OF[b.status]);
+        return {
+          ...b,
+          candidateCount: _count.candidates,
+          approvals: current.filter((d) => d.type === 'APPROVE').length,
+          decidedByMe: current.some((d) => d.actorId === user.id),
+        };
+      }),
     });
   }),
 );
@@ -63,13 +81,19 @@ batchesRouter.get(
     const batch = await prisma.batch.findFirst({
       where: { AND: [{ id: req.params.id }, batchScope(currentUser(req))] },
       include: {
+        centre: { select: { id: true, name: true } },
+        district: { select: { name: true } },
         candidates: { orderBy: { candidateRef: 'asc' } },
         decisions: { include: { actor: { select: { id: true, name: true } } }, orderBy: { createdAt: 'asc' } },
       },
     });
     if (!batch) throw batchNotFound();
     const audits = await prisma.auditLog.findMany({ where: { entityType: 'Batch', entityId: batch.id }, orderBy: { id: 'asc' } });
-    res.json({ batch: { ...batch, audit: audits.map((a) => ({ ...a, id: a.id.toString() })) } });
+    const actorIds = [...new Set(audits.map((a) => a.actorId).filter((id): id is string => !!id))];
+    const names = new Map((await prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]));
+    res.json({
+      batch: { ...batch, audit: audits.map((a) => ({ ...a, id: a.id.toString(), actorName: a.actorId ? (names.get(a.actorId) ?? null) : null })) },
+    });
   }),
 );
 
@@ -81,7 +105,10 @@ batchesRouter.post(
     const user = currentUser(req);
     const batchId = req.params.id;
     if (!req.file) throw new HttpError(400, 'VALIDATION_ERROR', 'Attach the CSV as multipart field "file"');
-    const current = await prisma.batch.findFirst({ where: { AND: [{ id: batchId }, batchScope(user)] }, select: { status: true } });
+    const current = await prisma.batch.findFirst({
+      where: { AND: [{ id: batchId }, batchScope(user)] },
+      select: { id: true, status: true, districtId: true, centreId: true },
+    });
     if (!current) throw batchNotFound();
     if (!EDITABLE.includes(current.status)) throw new HttpError(409, 'INVALID_STATE', `Cannot upload candidates in ${current.status}`);
 
@@ -103,6 +130,7 @@ batchesRouter.post(
       await tx.candidate.createMany({ data: rows.map((r) => ({ ...r, batchId })) });
       await audit(tx, { actorId: user.id, action: 'CSV_UPLOADED', entityType: 'Batch', entityId: batchId, metadata: { rowCount: rows.length } });
     });
+    await publishBatch('batch.candidates', current);
     res.json({ count: rows.length });
   }),
 );

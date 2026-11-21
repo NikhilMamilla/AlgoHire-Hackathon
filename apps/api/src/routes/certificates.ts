@@ -6,6 +6,7 @@ import { renderCertificatePdf } from '../certificates/pdf.js';
 import { verifyDownloadToken } from '../certificates/token.js';
 import { HttpError } from '../errors.js';
 import { ah, prisma } from '../lib.js';
+import { publishBatch } from '../realtime.js';
 import { batchScope } from '../scope.js';
 
 export const certificatesRouter = Router();
@@ -94,6 +95,7 @@ certificatesRouter.post(
       const c = await tx.certificate.update({
         where: { id: locked.id },
         data: { status: 'REVOKED', revokedAt: new Date(), revokedById: user.id, revokeReason: reason },
+        include: { batch: { select: { id: true, districtId: true, centreId: true } } },
       });
       await audit(tx, { actorId: user.id, action: 'CERTIFICATE_REVOKED', entityType: 'Certificate', entityId: c.id, metadata: { certificateNo: certNo, reason } });
 
@@ -105,6 +107,8 @@ certificatesRouter.post(
       }
       return c;
     });
-    res.json({ certificate });
+    const { batch, ...cert } = certificate;
+    await publishBatch('certificate.revoked', batch, { certificateNo: cert.certificateNo, status: 'REVOKED' });
+    res.json({ certificate: cert });
   }),
 );

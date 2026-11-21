@@ -26,6 +26,11 @@ export async function userFromRequest(req: Express.Request & { headers: Record<s
   if (typeof header !== 'string' || !header) return null;
   const [scheme, token] = header.split(' ');
   if (scheme !== 'Bearer' || !token) throw new HttpError(401, 'UNAUTHENTICATED', 'Missing bearer token');
+  return userFromToken(token);
+}
+
+/** Verifies the JWT and re-loads the user from the DB. 401 on any failure. */
+export async function userFromToken(token: string): Promise<User> {
   let sub: string | undefined;
   try {
     sub = (jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload).sub;

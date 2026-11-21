@@ -3,6 +3,7 @@ import { Worker, type Processor } from 'bullmq';
 import './config.js';
 import { deliverCertificate, markDeliveryFailed } from './jobs/deliverCertificate.js';
 import { issueCertificates } from './jobs/issueCertificates.js';
+import { escalateStuckBatches } from './jobs/escalate.js';
 import { reconcile } from './jobs/reconcile.js';
 import { createRedis, logger, prisma } from './lib.js';
 import { closeQueues, queue, QUEUES, type QueueName } from './queues.js';
@@ -25,8 +26,12 @@ start(QUEUES.delivery, (job) => deliverCertificate(job.data.deliveryId, provider
     markDeliveryFailed(job.data.deliveryId, err.message).catch((e) => logger.error({ err: e }, 'markDeliveryFailed'));
   }
 });
-start(QUEUES.maintenance, async () => logger.info(await reconcile(), 'reconcile'));
+start(QUEUES.maintenance, async (job) => {
+  const result = job.name === 'escalate' ? await escalateStuckBatches() : await reconcile();
+  logger.info(result, job.name);
+});
 await queue('maintenance').upsertJobScheduler('reconcile-every-30s', { every: 30_000 }, { name: 'reconcile' });
+await queue('maintenance').upsertJobScheduler('escalate-every-30s', { every: 30_000 }, { name: 'escalate' });
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'worker shutting down');

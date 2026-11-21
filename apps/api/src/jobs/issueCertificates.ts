@@ -4,6 +4,7 @@ import { newCertificateNo } from '../certificates/numbers.js';
 import { HttpError } from '../errors.js';
 import { logger, prisma } from '../lib.js';
 import { enqueueDeliveries } from '../queues.js';
+import { publishBatch } from '../realtime.js';
 
 const MAX_NUMBER_TRIES = 5;
 
@@ -39,7 +40,7 @@ export async function issueCertificates(batchId: string, opts: { jobAttempt?: nu
 
       const certs = await tx.certificate.findMany({ where: { batchId }, select: { id: true } });
       await tx.delivery.createMany({ data: certs.map((c) => ({ certificateId: c.id })), skipDuplicates: true });
-      await moveTo(tx, b, 'ISSUED');
+      const issued = await moveTo(tx, b, 'ISSUED');
       await audit(tx, {
         actorId: null,
         action: 'CERTIFICATES_ISSUED',
@@ -48,11 +49,13 @@ export async function issueCertificates(batchId: string, opts: { jobAttempt?: nu
         metadata: { count: certs.length, jobAttempt: opts.jobAttempt ?? null },
       });
       const deliveries = await tx.delivery.findMany({ where: { certificate: { batchId }, status: 'PENDING' }, select: { id: true } });
-      return { count: certs.length, deliveryIds: deliveries.map((d) => d.id) };
+      return { count: certs.length, deliveryIds: deliveries.map((d) => d.id), batch: issued };
     },
     { timeout: 30_000 },
   );
 
-  if (result) await enqueueDeliveries(result.deliveryIds);
-  return result;
+  if (!result) return null;
+  await publishBatch('certificates.issued', result.batch);
+  await enqueueDeliveries(result.deliveryIds);
+  return { count: result.count, deliveryIds: result.deliveryIds };
 }

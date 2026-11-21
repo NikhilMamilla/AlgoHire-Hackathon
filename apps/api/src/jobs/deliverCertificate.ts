@@ -2,6 +2,7 @@ import { audit } from '../audit.js';
 import { downloadToken } from '../certificates/token.js';
 import { config } from '../config.js';
 import { prisma } from '../lib.js';
+import { publishBatch } from '../realtime.js';
 import type { WhatsAppProvider } from '../whatsapp/provider.js';
 
 export const SEND_TIMEOUT_MS = 3000;
@@ -17,7 +18,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number) =>
 export async function deliverCertificate(deliveryId: string, provider: WhatsAppProvider, opts: { timeoutMs?: number } = {}) {
   const d = await prisma.delivery.findUnique({
     where: { id: deliveryId },
-    include: { certificate: { include: { candidate: true, batch: { select: { courseName: true } } } } },
+    include: { certificate: { include: { candidate: true, batch: { select: { id: true, courseName: true, districtId: true, centreId: true } } } } },
   });
   if (!d || d.status === 'SENT') return 'SKIPPED' as const;
 
@@ -27,6 +28,7 @@ export async function deliverCertificate(deliveryId: string, provider: WhatsAppP
       const { count } = await tx.delivery.updateMany({ where: { id: d.id, status: { in: ['PENDING', 'FAILED'] } }, data: { status: 'CANCELLED' } });
       if (count) await audit(tx, { actorId: null, action: 'DELIVERY_CANCELLED', entityType: 'Delivery', entityId: d.id, metadata: { reason: 'certificate revoked' } });
     });
+    await publishBatch('delivery.status', cert.batch, { certificateNo: cert.certificateNo, status: 'CANCELLED' });
     return 'CANCELLED' as const;
   }
 
@@ -53,17 +55,28 @@ export async function deliverCertificate(deliveryId: string, provider: WhatsAppP
       if (count) await audit(tx, { actorId: null, action: 'CERTIFICATE_DELIVERED', entityType: 'Delivery', entityId: d.id, metadata: { providerMessageId, attempt: d.attempts + 1 } });
       return count > 0;
     });
-    return sent ? ('SENT' as const) : ('CANCELLED' as const);
+    const status = sent ? ('SENT' as const) : ('CANCELLED' as const);
+    await publishBatch('delivery.status', cert.batch, { certificateNo: cert.certificateNo, status });
+    return status;
   } catch (err) {
     await prisma.delivery.update({ where: { id: d.id }, data: { attempts: { increment: 1 }, lastError: (err as Error).message } });
+    // Attempts/lastError changed: let staff screens tick live.
+    await publishBatch('delivery.status', cert.batch, { certificateNo: cert.certificateNo, status: 'PENDING' });
     throw err;
   }
 }
 
 /** Called by the worker when a delivery job has used all its attempts. */
 export async function markDeliveryFailed(deliveryId: string, reason: string) {
-  await prisma.$transaction(async (tx) => {
+  const failed = await prisma.$transaction(async (tx) => {
     const { count } = await tx.delivery.updateMany({ where: { id: deliveryId, status: 'PENDING' }, data: { status: 'FAILED', lastError: reason } });
     if (count) await audit(tx, { actorId: null, action: 'DELIVERY_FAILED', entityType: 'Delivery', entityId: deliveryId, metadata: { reason } });
+    return count > 0;
   });
+  if (!failed) return;
+  const d = await prisma.delivery.findUnique({
+    where: { id: deliveryId },
+    select: { certificate: { select: { certificateNo: true, batch: { select: { id: true, districtId: true, centreId: true } } } } },
+  });
+  if (d) await publishBatch('delivery.status', d.certificate.batch, { certificateNo: d.certificate.certificateNo, status: 'FAILED' });
 }

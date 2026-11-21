@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { HttpError } from './errors.js';
 import { onBatchApproved } from './events.js';
 import { prisma } from './lib.js';
+import { publishBatch } from './realtime.js';
 import { assertVisible, batchNotFound } from './scope.js';
 
 export const TRANSITIONS: Record<BatchStatus, readonly BatchStatus[]> = {
@@ -47,8 +48,8 @@ export async function moveTo(tx: Prisma.TransactionClient, batch: LockedBatch, t
  * from earlier rounds no longer count and the batch needs fresh approvals, because the candidate data may
  * have changed since they were given. Old decisions are kept for the audit trail.
  */
-export function submitBatch(user: User, batchId: string) {
-  return prisma.$transaction(async (tx) => {
+export async function submitBatch(user: User, batchId: string) {
+  const submitted = await prisma.$transaction(async (tx) => {
     const b = await lockBatch(tx, batchId);
     await assertVisible(tx, user, batchId);
     if (!EDITABLE.includes(b.status)) throw new HttpError(409, 'INVALID_STATE', `Cannot submit a batch in ${b.status}`);
@@ -66,6 +67,8 @@ export function submitBatch(user: User, batchId: string) {
     });
     return batch;
   });
+  await publishBatch('batch.submitted', submitted);
+  return submitted;
 }
 
 /** Review stages: the stage and the role allowed to decide are derived from status, never sent by the client. */
@@ -88,6 +91,7 @@ export const DISTRICT_APPROVALS_REQUIRED = 2;
 const STAGE_ORDER: Record<Role, number> = { CENTRE: -1, DISTRICT_OFFICER: 0, QUALITY: 1, STATE: 2 };
 
 export async function decide(user: User, batchId: string, type: DecisionType, reason?: string) {
+  let statusChanged = false;
   const result = await prisma.$transaction(async (tx) => {
     // 1. Lock the row so concurrent decisions on this batch run one at a time.
     const b = await lockBatch(tx, batchId);
@@ -143,6 +147,7 @@ export async function decide(user: User, batchId: string, type: DecisionType, re
 
     // 5. Status change: moveTo sets stageEnteredAt, version+1, escalatedAt=null.
     const batch = await moveTo(tx, b, to);
+    statusChanged = true;
     await audit(tx, {
       actorId: user.id,
       action: ACTION_FOR[to]!,
@@ -153,6 +158,7 @@ export async function decide(user: User, batchId: string, type: DecisionType, re
     return { decision, batch };
   });
 
+  await publishBatch(statusChanged ? 'batch.status' : 'batch.decision', result.batch);
   if (result.batch.status === 'APPROVED') await onBatchApproved(batchId);
   return result;
 }
