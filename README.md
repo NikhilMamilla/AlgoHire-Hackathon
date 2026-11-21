@@ -62,7 +62,7 @@ browser ──► nginx :8080 ──► api (Express, :4000, not published) ─�
 |---|---|
 | ![Batches](apps/web/e2e/screenshots/03-batches-waiting-for-me.png) | ![Batch detail](apps/web/e2e/screenshots/05-batch-detail-certificates.png) |
 | **Row-level CSV errors** | **State overview** |
-| ![CSV errors](apps/web/e2e/screenshots/02-csv-errors.png) | ![State overview](apps/web/e2e/screenshots/08-state-dashboard.png) |
+| ![CSV errors](apps/web/e2e/screenshots/02-csv-errors.png) | ![State overview](apps/web/e2e/screenshots/10-state-dashboard.png) |
 
 Screens: demo login, batches (tabs, live), batch detail (CSV upload, review actions, candidates, decisions,
 certificates, audit timeline), state overview, simulated WhatsApp outbox, and public `/verify/:certNo`.

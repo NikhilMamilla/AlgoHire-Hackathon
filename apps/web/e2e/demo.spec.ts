@@ -5,8 +5,14 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sample = (name: string) => path.resolve(here, '../../../samples', name);
-const shot = (page: Page, name: string) =>
-  page.screenshot({ path: path.join(here, 'screenshots', `${name}.png`), fullPage: true, animations: 'disabled' });
+const shot = async (page: Page, name: string) => {
+  const opts = { path: path.join(here, 'screenshots', `${name}.png`), fullPage: true, animations: 'disabled' as const };
+  // Chromium occasionally fails the very first capture of a run ("Unable to capture screenshot"); one retry clears it.
+  await page.screenshot(opts).catch(async () => {
+    await page.waitForTimeout(500);
+    await page.screenshot(opts);
+  });
+};
 
 let consoleErrors: string[] = [];
 test.beforeEach(() => {
@@ -33,7 +39,7 @@ async function loginAs(browser: Browser, name: string, screenshot = false) {
   await expect(card).toBeVisible();
   if (screenshot) await shot(page, '01-login');
   await card.click();
-  await page.waitForURL('**/batches');
+  await page.waitForURL(/\/(batches|state)$/); // STATE lands on its dashboard, everyone else on batches
   return page;
 }
 
@@ -179,12 +185,26 @@ test('demo flow: upload, live review, issue, verify, revoke', async ({ browser }
 
   await test.step('State dashboard and WhatsApp outbox render', async () => {
     await farah.goto('/state');
-    await expect(farah.locator('.tile').first()).toBeVisible();
-    await shot(farah, '08-state-dashboard');
+    await expect(farah.getByRole('heading', { name: 'Recent activity' })).toBeVisible();
+    await expect(farah.locator('.kpis .tile')).toHaveCount(5);
+    await expect(farah.locator('.timeline li').first()).toBeVisible();
+    await shot(farah, '10-state-dashboard');
     await farah.goto('/whatsapp');
     await expect(farah.locator('.message').first()).toBeVisible();
     await shot(farah, '09-whatsapp-outbox');
   });
+});
+
+test('landing page loads and "Sign in to the demo" leads to /login', async ({ browser }) => {
+  const page = await newPage(browser, 'landing');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/can.t be faked/);
+  await expect(page.locator('.flow-step')).toHaveCount(6);
+  await expect(page.getByRole('heading', { name: 'Live registry' })).toBeVisible();
+  await shot(page, '00-landing');
+  await page.getByRole('link', { name: 'Sign in to the demo' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Sign in to CertiFlow' })).toBeVisible();
 });
 
 test('a 60-candidate batch goes through quality review and issues 60 certificates', async ({ browser }) => {
