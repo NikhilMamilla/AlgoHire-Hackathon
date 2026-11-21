@@ -11,4 +11,6 @@ RUN npm run build -w apps/web
 FROM nginx:1.27-alpine
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+# Sample CSVs for the centre's "Download sample CSV" links.
+COPY samples /usr/share/nginx/html/samples
 EXPOSE 8080
