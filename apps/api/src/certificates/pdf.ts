@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { config } from '../config.js';
@@ -13,10 +14,28 @@ export type CertificateView = {
 
 const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
+// Full-page background (1492×1054 px, same aspect as A4 landscape). Read once, reused for every render.
+let background: Buffer | undefined;
+const backgroundImage = () => (background ??= readFileSync(new URL('../../assets/certificate-bg.png', import.meta.url)));
+
+// Clean zones of certificate-bg.png in PDF points (image px × 841.89/1492).
+const ZONE = {
+  topRuleY: 109, // ornament line under the heading
+  bottomRuleY: 503, // ornament line above the footer
+  detailsBox: { x: 58, y: 376, w: 179, h: 90 }, // framed box, bottom left
+  qrBox: { x: 668, y: 369, w: 102, h: 101 }, // framed box, bottom right
+  textInset: 120, // keeps centred text clear of the corner guilloche
+};
+
+const NAVY = '#12355b';
+const GOLD = '#9a6b1c';
+const INK = '#1f2937';
+const MUTED = '#5b6472';
+
 /** Renders the certificate on demand from DB data (A4 landscape). Nothing is stored. */
 export async function renderCertificatePdf(c: CertificateView): Promise<Buffer> {
   const verifyUrl = `${config.publicBaseUrl}/verify/${c.certificateNo}`;
-  const qr = await QRCode.toBuffer(verifyUrl, { margin: 1, width: 360, errorCorrectionLevel: 'M' });
+  const qr = await QRCode.toBuffer(verifyUrl, { margin: 0, width: 360, errorCorrectionLevel: 'M', color: { dark: NAVY, light: '#00000000' } });
 
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 0, info: { Title: `Certificate ${c.certificateNo}` } });
   const chunks: Buffer[] = [];
@@ -25,47 +44,47 @@ export async function renderCertificatePdf(c: CertificateView): Promise<Buffer> 
 
   const W = doc.page.width; // 841.89
   const H = doc.page.height; // 595.28
-  const ink = '#1f2937';
-  const muted = '#6b7280';
-  const accent = '#1d4ed8';
+  doc.image(backgroundImage(), 0, 0, { width: W, height: H });
 
-  // Thin double border.
-  doc.lineWidth(1.5).strokeColor(accent).rect(24, 24, W - 48, H - 48).stroke();
-  doc.lineWidth(0.6).rect(32, 32, W - 64, H - 64).stroke();
-
-  const text = (s: string, y: number, font: string, size: number, color = ink) => {
-    // Shrink long names/courses (up to 100 chars) to one line so they never push into the next line.
+  const textW = W - 2 * ZONE.textInset;
+  const centred = (s: string, y: number, font: string, size: number, color = INK) => {
+    // Shrink long names/courses (up to 100 chars) to one line so they never collide with the next line.
     doc.font(font).fontSize(size);
-    while (size > 10 && doc.widthOfString(s) > W - 120) doc.fontSize(--size);
-    doc.fillColor(color).text(s, 60, y, { width: W - 120, align: 'center', lineBreak: false });
+    while (size > 10 && doc.widthOfString(s) > textW) doc.fontSize(--size);
+    doc.fillColor(color).text(s, ZONE.textInset, y, { width: textW, align: 'center', lineBreak: false });
   };
 
-  text('PRAGATI SKILLS MISSION', 70, 'Helvetica-Bold', 14, accent);
-  text('Certificate of Completion', 98, 'Times-Bold', 38);
-  text('This certifies that', 178, 'Times-Italic', 16, muted);
-  text(c.candidateName, 204, 'Times-Bold', 30);
-  text('has successfully completed', 252, 'Times-Italic', 16, muted);
-  text(c.courseName, 276, 'Helvetica-Bold', 20);
-  text(`at ${c.centreName}`, 308, 'Helvetica', 14, muted);
+  // Heading: above the top ornament line.
+  centred('PRAGATI SKILLS MISSION', 50, 'Helvetica-Bold', 12, GOLD);
+  centred('Certificate of Completion', 66, 'Times-Bold', 32, NAVY);
 
-  // Dates and number, left block.
-  const lx = 80;
-  const row = (label: string, value: string, y: number) => {
-    doc.font('Helvetica').fontSize(9).fillColor(muted).text(label.toUpperCase(), lx, y);
-    doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(value, lx, y + 12);
+  // Body: between the ornament lines, above the framed boxes.
+  centred('This certifies that', ZONE.topRuleY + 54, 'Times-Italic', 15, MUTED);
+  centred(c.candidateName, ZONE.topRuleY + 78, 'Times-Bold', 32, INK);
+  centred('has successfully completed', ZONE.topRuleY + 128, 'Times-Italic', 15, MUTED);
+  centred(c.courseName, ZONE.topRuleY + 152, 'Helvetica-Bold', 20, INK);
+  centred(`at ${c.centreName}`, ZONE.topRuleY + 182, 'Helvetica', 13, MUTED);
+
+  // Bottom-left frame: dates and certificate number.
+  const b = ZONE.detailsBox;
+  const row = (label: string, value: string, i: number) => {
+    const y = b.y + 8 + i * 27;
+    doc.font('Helvetica').fontSize(7).fillColor(MUTED).text(label.toUpperCase(), b.x + 12, y, { characterSpacing: 0.6, lineBreak: false });
+    doc.font('Helvetica-Bold').fontSize(11).fillColor(INK).text(value, b.x + 12, y + 9, { width: b.w - 24, lineBreak: false });
   };
-  row('Completion date', fmt(c.completionDate), 380);
-  row('Issue date', fmt(c.issuedAt), 420);
-  row('Certificate no.', c.certificateNo, 460);
+  row('Completion date', fmt(c.completionDate), 0);
+  row('Issue date', fmt(c.issuedAt), 1);
+  row('Certificate no.', c.certificateNo, 2);
 
-  // QR bottom right with the URL under it.
-  const qrSize = 110;
-  const qx = W - 80 - qrSize;
-  const qy = H - 80 - qrSize - 24;
-  doc.image(qr, qx, qy, { width: qrSize });
-  doc.font('Helvetica').fontSize(7).fillColor(muted).text(verifyUrl, qx - 60, qy + qrSize + 6, { width: qrSize + 120, align: 'center' });
+  // Bottom-right frame: QR code centred in it, verify URL under the frame.
+  const q = ZONE.qrBox;
+  const qrSize = 86;
+  doc.image(qr, q.x + (q.w - qrSize) / 2, q.y + (q.h - qrSize) / 2, { width: qrSize });
+  doc.font('Helvetica').fontSize(6.5).fillColor(MUTED)
+    .text(verifyUrl, q.x + q.w / 2 - 110, q.y + q.h + 5, { width: 220, align: 'center', lineBreak: false });
 
-  doc.font('Helvetica').fontSize(8).fillColor(muted).text(`Verify authenticity at ${verifyUrl}`, 60, H - 52, { width: W - 120, align: 'center' });
+  // Footer: below the bottom ornament line.
+  centred(`Verify authenticity at ${verifyUrl}`, ZONE.bottomRuleY + 14, 'Helvetica', 8, MUTED);
 
   doc.end();
   return done;
