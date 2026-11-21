@@ -254,6 +254,41 @@ test('log out from the dashboard ends the session', async ({ browser }) => {
   await expect(farah).toHaveURL(/\/login$/);
 });
 
+test('staff screens never scroll sideways (tabs wrap, tables fit)', async ({ browser }) => {
+  const noOverflow = () =>
+    [document.documentElement, ...document.querySelectorAll('.tabs, .table-wrap, .content')].every((el) => el.scrollWidth <= el.clientWidth + 1);
+  for (const name of ['Farah', 'Dev', 'Anika']) {
+    const page = await loginAs(browser, name);
+    for (const width of [1280, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of name === 'Farah' ? ['/batches', '/state'] : ['/batches']) {
+        await page.goto(path);
+        await expect(page.locator('main h1')).toBeVisible();
+        await page.waitForLoadState('networkidle');
+        expect(await page.evaluate(noOverflow), `${name} ${path} @${width}`).toBe(true);
+      }
+    }
+  }
+});
+
+test('architecture diagram opens full screen in the page and closes with ✕ or Esc', async ({ browser }) => {
+  const page = await newPage(browser, 'arch');
+  await page.goto('/');
+  const open = page.getByRole('button', { name: /opens the diagram full screen/ });
+  await open.scrollIntoViewIfNeeded();
+  await open.click();
+  const viewer = page.getByRole('dialog', { name: 'Architecture diagram, full screen' });
+  await expect(viewer).toBeVisible();
+  await expect(page).toHaveURL(/\/$/); // never navigates away
+  await shot(page, 'architecture-viewer', false);
+  await viewer.getByRole('button', { name: 'Close diagram' }).click();
+  await expect(viewer).toBeHidden();
+  await open.click();
+  await expect(viewer).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
+});
+
 test('mobile landing: hamburger menu replaces the section nav', async ({ browser }) => {
   const page = await newPage(browser, 'mobile-nav');
   await page.setViewportSize({ width: 390, height: 844 });
