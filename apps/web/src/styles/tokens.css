@@ -1,0 +1,75 @@
+/* CertiFlow design tokens. Every colour, size, space, radius and shadow in the app comes from here. */
+:root {
+  /* neutrals (slate) */
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --border: #e2e6ec;
+  --border-strong: #cbd2dc;
+  --text: #0e1726;
+  --text-2: #3f4b5e;
+  --text-3: #64748b;
+  --text-inverse: #ffffff;
+
+  /* brand: deep civic navy + saffron accent (used sparingly: highlights, the hero underline, step numbers) */
+  --primary: #1b3a7a;
+  --primary-hover: #152e62;
+  --primary-50: #eef2fa;
+  --primary-100: #dce4f5;
+  --accent: #c2560c;
+  --accent-50: #fff4eb;
+
+  /* status (all text colours ≥ 4.5:1 on their bg) */
+  --success: #137a3b;
+  --success-bg: #eaf7ef;
+  --warning: #a35a00;
+  --warning-bg: #fff6e5;
+  --danger: #b42318;
+  --danger-bg: #fef1f0;
+  --info: #1d4ed8;
+  --info-bg: #eef4ff;
+
+  /* type */
+  --font: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-30: 1.875rem;
+  --fs-38: 2.375rem;
+  --fs-48: 3rem;
+  --fs-60: 3.75rem;
+
+  /* spacing (4px grid) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+  --s-24: 96px;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(14, 23, 38, 0.06);
+  --shadow: 0 1px 3px rgba(14, 23, 38, 0.08), 0 4px 12px rgba(14, 23, 38, 0.05);
+  --focus: 0 0 0 3px rgba(27, 58, 122, 0.35);
+  --container: 1200px;
+
+  /* layout */
+  --sidebar-w: 232px;
+  --topbar-h: 56px;
+  --control-h: 40px;
+  --control-h-dense: 36px;
+}
