@@ -5,6 +5,7 @@ import { errorHandler, notFound } from './errors.js';
 import { logger, prisma, redis } from './lib.js';
 import { authRouter } from './routes/auth.js';
 import { batchesRouter } from './routes/batches.js';
+import { certificatesRouter } from './routes/certificates.js';
 import { deliveriesRouter } from './routes/deliveries.js';
 
 export function createApp() {
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/api', authRouter);
   app.use('/api', batchesRouter);
   app.use('/api', deliveriesRouter);
+  app.use('/api', certificatesRouter);
 
   app.use(notFound);
   app.use(errorHandler);
