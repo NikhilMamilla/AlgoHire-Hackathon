@@ -461,7 +461,7 @@ function Certificates({
       {loading && !certs ? (
         <Spinner />
       ) : (
-        <div className="table-wrap table-scroll">
+        <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
