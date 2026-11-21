@@ -90,7 +90,11 @@ describe('workflow', () => {
       expect(codes.filter((c) => c === 201)).toHaveLength(2);
       expect(await status(id)).toBe('STATE_REVIEW');
       expect((await auditActions(id)).filter((a) => a === 'BATCH_STAGE_ADVANCED')).toHaveLength(1);
-      expect(await prisma.decision.count({ where: { batchId: id, actorId: dev.user.id } })).toBe(1);
+      // Any 2 of the 3 officers can win the lock, so Dev may have 0 decisions (both 409) but never 2.
+      expect(await prisma.decision.count({ where: { batchId: id, actorId: dev.user.id } })).toBeLessThanOrEqual(1);
+      expect(await prisma.decision.count({ where: { batchId: id } })).toBe(2);
+      // Dev's duplicate request can never both succeed.
+      expect(results.filter((r, j) => (j === 0 || j === 3) && r.status === 201).length).toBeLessThanOrEqual(1);
     }
   }, 30_000);
 
