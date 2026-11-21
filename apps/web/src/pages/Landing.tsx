@@ -182,6 +182,19 @@ export default function Landing() {
       .catch(() => setStats('error'));
   }, []);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
+    const onResize = () => window.innerWidth > 900 && setMenuOpen(false);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [menuOpen]);
+
   const verify = (e: FormEvent) => {
     e.preventDefault();
     const no = certNo.trim().toUpperCase();
@@ -222,7 +235,36 @@ export default function Landing() {
               Sign in
             </Link>
           )}
+          <button
+            type="button"
+            className="lp-menu-btn"
+            aria-expanded={menuOpen}
+            aria-controls="lp-mobile-menu"
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+            <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
+          </button>
         </div>
+        {/* Mobile menu (under 900px the GooeyNav is hidden and this replaces it). */}
+        <nav id="lp-mobile-menu" className="lp-mobile-menu" data-open={menuOpen} aria-label="Site menu" hidden={!menuOpen}>
+          <ul>
+            {NAV_ITEMS.map((item) => (
+              <li key={item.href}>
+                <a href={item.href} onClick={() => setMenuOpen(false)}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+            <li>
+              <Link to="/verify" onClick={() => setMenuOpen(false)}>
+                Verify a certificate
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </header>
 
       <main id="main">

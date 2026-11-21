@@ -1,0 +1,191 @@
+/*
+ * Loaded last. Two jobs:
+ *  1. Mobile landing header: under 900px the GooeyNav gives way to a hamburger + glass dropdown.
+ *     Under 760px the guilloche texture is switched off (its ornament line showed through at the top).
+ *     Nothing in this part applies above those widths, so the desktop view is unchanged.
+ *  2. "The problem today" in neumorphism (soft UI): monochrome surface, cards raised by twin shadows,
+ *     icons sunk into wells. "Who uses it" stays clay; each section keeps one material.
+ */
+
+/* ---------- Hamburger (hidden on desktop) ---------- */
+.lp-menu-btn,
+.lp-mobile-menu {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .lp-gooey,
+  .lp-head-link {
+    display: none;
+  }
+  .lp-head-row {
+    gap: var(--s-3);
+  }
+  .lp-menu-btn {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-edge);
+    background: var(--glass-bg-strong);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  .lp-menu-btn:hover {
+    background: var(--surface);
+  }
+  .lp-menu-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .lp-menu-btn[aria-expanded='true'] {
+    background: var(--primary);
+    color: var(--text-inverse);
+    border-color: var(--primary);
+  }
+  .lp-mobile-menu:not([hidden]) {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: var(--s-2) var(--s-4) var(--s-4);
+    background: rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    border-bottom: 1px solid var(--glass-edge);
+    box-shadow: 0 24px 40px -24px rgba(14, 23, 38, 0.35);
+    animation: menu-in 160ms ease-out;
+  }
+  .lp-mobile-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lp-mobile-menu li + li {
+    border-top: 1px solid var(--border);
+  }
+  .lp-mobile-menu a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 var(--s-2);
+    color: var(--text);
+    font-size: var(--fs-16);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .lp-mobile-menu a:hover {
+    color: var(--primary);
+  }
+  .lp-mobile-menu li:last-child a {
+    color: var(--primary);
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ---------- No guilloche texture on phones ---------- */
+@media (max-width: 760px) {
+  .lp-hero::before,
+  .lp-guar::before,
+  .lp-cta::before,
+  .mesh-bg::before,
+  .public::before {
+    display: none;
+  }
+  .lp-brand span {
+    font-size: var(--fs-16);
+  }
+}
+
+/* ---------- "The problem today": neumorphism ---------- */
+#problem {
+  --neu-bg: #e7ebf2;
+  --neu-dark: #c3cbd8;
+  --neu-light: #ffffff;
+  background: var(--neu-bg);
+  border-color: transparent;
+}
+#problem .lp-problems {
+  gap: var(--s-6);
+}
+#problem .lp-card {
+  background: var(--neu-bg);
+  border: none;
+  border-radius: 22px;
+  padding: var(--s-6);
+  box-shadow:
+    9px 9px 20px var(--neu-dark),
+    -9px -9px 20px var(--neu-light);
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+@media (hover: hover) {
+  /* pressing in, the signature neumorphic interaction */
+  #problem .lp-card:hover {
+    transform: none;
+    box-shadow:
+      inset 7px 7px 14px var(--neu-dark),
+      inset -7px -7px 14px var(--neu-light);
+  }
+}
+#problem .lp-card .lp-icon {
+  width: 52px;
+  height: 52px;
+  padding: 13px;
+  margin-bottom: var(--s-4);
+  border-radius: 16px;
+  background: var(--neu-bg);
+  stroke: var(--primary);
+  box-shadow:
+    inset 4px 4px 9px var(--neu-dark),
+    inset -4px -4px 9px var(--neu-light);
+}
+#problem .lp-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  letter-spacing: -0.01em;
+}
+#problem .lp-card p {
+  color: var(--text-2);
+}
+#problem .lp-quote {
+  border-left: none;
+  padding: var(--s-6) var(--s-8);
+  border-radius: 22px;
+  background: var(--neu-bg);
+  box-shadow:
+    inset 6px 6px 14px var(--neu-dark),
+    inset -6px -6px 14px var(--neu-light);
+}
+@media (max-width: 760px) {
+  #problem .lp-problems {
+    gap: var(--s-5);
+  }
+  #problem .lp-card {
+    box-shadow:
+      6px 6px 14px var(--neu-dark),
+      -6px -6px 14px var(--neu-light);
+  }
+  #problem .lp-quote {
+    padding: var(--s-5);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #problem .lp-card,
+  .lp-mobile-menu:not([hidden]) {
+    transition: none;
+    animation: none;
+  }
+}
