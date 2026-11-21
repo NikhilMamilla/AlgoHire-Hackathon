@@ -168,6 +168,7 @@ export default function Landing() {
   const [certNo, setCertNo] = useState('');
   const [formatError, setFormatError] = useState(false);
   const activeSection = useActiveSection();
+  const archDialog = useRef<HTMLDialogElement>(null);
   const [, force] = useState(0);
   const setActiveSection = (i: number) => {
     pinned.current = { index: i, until: Date.now() + 900 }; // keep the clicked pill while the page scrolls there
@@ -439,7 +440,7 @@ export default function Landing() {
 
         <Section id="architecture" title="Architecture" tone="bg" intro="Five containers, one codebase. The API and the worker share one image and talk through Redis; PostgreSQL is the source of truth.">
           <figure className="lp-arch-figure">
-            <a href="/architecture.webp" target="_blank" rel="noreferrer" className="lp-arch-zoom">
+            <button type="button" className="lp-arch-zoom" onClick={() => archDialog.current?.showModal()} aria-haspopup="dialog">
               <img
                 src="/architecture.webp"
                 width={1672}
@@ -454,10 +455,26 @@ export default function Landing() {
                 </svg>
                 Open full size
               </span>
-              <span className="sr-only"> (opens the full-size diagram in a new tab)</span>
-            </a>
+              <span className="sr-only"> (opens the diagram full screen)</span>
+            </button>
             <figcaption>Numbered steps follow one batch from upload (1) to public verification (7). Solid lines are requests, dashed lines background jobs, dotted lines live events.</figcaption>
           </figure>
+
+          {/* In-page viewer: a native modal <dialog> (Esc closes, focus stays inside), so the visitor never leaves the page. */}
+          <dialog
+            ref={archDialog}
+            className="lp-lightbox"
+            aria-label="Architecture diagram, full screen"
+            onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
+          >
+            <button type="button" className="lp-lightbox-close" onClick={() => archDialog.current?.close()} autoFocus>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+              <span className="sr-only">Close diagram</span>
+            </button>
+            <img src="/architecture.webp" width={1672} height={941} alt="CertiFlow architecture diagram, full size." />
+          </dialog>
 
           <div className="lp-arch-notes">
             <article className="lp-arch-note">

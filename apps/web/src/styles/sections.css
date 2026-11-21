@@ -867,3 +867,96 @@
     transition: none;
   }
 }
+
+/* ================= Architecture: full-screen viewer ================= */
+button.lp-arch-zoom {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: zoom-in;
+}
+button.lp-arch-zoom:focus-visible {
+  outline: none;
+  box-shadow: var(--focus), var(--glass-shadow);
+}
+.lp-lightbox {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: calc(var(--s-12) + var(--s-2)) var(--s-6) var(--s-6);
+  border: none;
+  background: rgba(10, 18, 36, 0.94);
+  color: var(--text-inverse);
+}
+.lp-lightbox[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade 160ms ease-out;
+}
+.lp-lightbox::backdrop {
+  background: transparent;
+}
+.lp-lightbox img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  background: #f6f9fb;
+}
+.lp-lightbox-close {
+  position: fixed;
+  top: var(--s-4);
+  right: var(--s-4);
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-inverse);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background 150ms ease;
+}
+.lp-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.lp-lightbox-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7);
+}
+.lp-lightbox-close svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+/* While the viewer is open the page behind it must not scroll. */
+html:has(.lp-lightbox[open]) {
+  overflow: hidden;
+}
+@media (max-width: 760px) {
+  .lp-lightbox {
+    padding: calc(var(--s-12) + var(--s-2)) var(--s-2) var(--s-4);
+  }
+  .lp-lightbox img {
+    border-radius: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-lightbox[open] {
+    animation: none;
+  }
+}
