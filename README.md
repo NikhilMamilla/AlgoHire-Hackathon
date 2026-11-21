@@ -49,4 +49,20 @@ kept for the audit trail.
 **Audit log** is append-only: a row-level trigger rejects `UPDATE`/`DELETE` on `"AuditLog"`. Tests reset data with
 `TRUNCATE`, which does not fire row-level triggers.
 
+## Certificates, delivery, verification
+
+- On `APPROVED` the API enqueues `issue-certificates` (BullMQ). The worker issues one certificate per candidate
+  (`CF-` + 10 Crockford base32 chars, 50 random bits) in one locked transaction and moves the batch to `ISSUED`.
+  Re-running issuance is a no-op. Issuance never waits on WhatsApp.
+- Each certificate gets one delivery job sent through a simulated WhatsApp provider (`WHATSAPP_MODE=flaky|healthy|down`).
+  Sends are idempotent on the delivery id, so a retry after "accepted but timed out" never sends twice. After 6 failed
+  attempts a delivery is `FAILED`; `POST /api/deliveries/retry-failed` (state) re-queues them.
+- A reconciler runs every 30s and re-enqueues stale `APPROVED` batches and stale `PENDING` deliveries, covering a crash
+  between commit and enqueue or lost Redis data. Redis also runs with AOF persistence.
+- `GET /api/public/verify/:certNo` needs no login, always reads Postgres (`Cache-Control: no-store`) and is rate
+  limited per IP in Redis (`PUBLIC_RATE_LIMIT`, default 60/min).
+- `GET /api/certificates/:certNo/pdf` renders the PDF on demand. It is allowed with the candidate's signed `?token=`
+  link, or for state staff and the owning centre. A revoked certificate returns 410.
+- Revocation (state only) never deletes. It records who, when and why, and cancels an unsent delivery.
+
 ## Requirements note

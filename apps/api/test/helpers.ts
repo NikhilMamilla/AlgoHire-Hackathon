@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { Express } from 'express';
 import request from 'supertest';
 import { Role } from '@prisma/client';
-import { prisma } from '../src/lib.js';
+import { prisma, redis } from '../src/lib.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const sample = (name: string) => path.resolve(here, '../../../samples', name);
@@ -15,8 +15,10 @@ export const HEADER = 'candidate_ref,full_name,phone,completion_date';
 // row triggers, so test cleanup works while app-level UPDATE/DELETE on AuditLog stays blocked.
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE "AuditLog","Delivery","Certificate","Decision","Candidate","Batch" RESTART IDENTITY CASCADE',
+    'TRUNCATE "AuditLog","OutboundMessage","Delivery","Certificate","Decision","Candidate","Batch" RESTART IDENTITY CASCADE',
   );
+  const keys = await redis.keys('rl:*');
+  if (keys.length) await redis.del(...keys);
 }
 
 type Session = { token: string; user: { id: string; name: string; role: string }; auth: { Authorization: string } };
@@ -70,7 +72,22 @@ export async function readyBatch(app: Express, csvFile: string | Buffer = sample
   return batch.id;
 }
 
-export const csvOf = (rows: string[][]) => Buffer.from([HEADER, ...rows.map((r) => r.join(','))].join('\n') + '\n');
+/** readyBatch, then every review stage approves (Neha only when it lands in QUALITY_REVIEW). Returns an APPROVED batch id. */
+export async function approvedBatch(app: Express, csvFile: string | Buffer = sample('valid-10.csv')) {
+  const id = await readyBatch(app, csvFile);
+  const approve = async (name: string) => {
+    const res = await decide(app, (await login(app, name)).token, id, 'APPROVE');
+    if (res.status !== 201) throw new Error(`${name} approve failed: ${res.status} ${JSON.stringify(res.body)}`);
+    return res.body.batch.status as string;
+  };
+  await approve('Dev');
+  if ((await approve('Meera')) === 'QUALITY_REVIEW') await approve('Neha');
+  const final = await approve('Farah');
+  if (final !== 'APPROVED') throw new Error(`expected APPROVED, got ${final}`);
+  return id;
+}
+
+export const csvOf =(rows: string[][]) => Buffer.from([HEADER, ...rows.map((r) => r.join(','))].join('\n') + '\n');
 
 export const makeRows = (n: number) =>
   Array.from({ length: n }, (_, i) => [

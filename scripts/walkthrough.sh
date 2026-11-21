@@ -16,3 +16,19 @@ curl -sf -X POST "$BASE/api/batches/$BATCH/candidates/csv" -H "authorization: Be
 curl -sf -X POST "$BASE/api/batches/$BATCH/submit" -H "authorization: Bearer $ANIKA" | jq -r '"submitted -> \(.batch.status)"'
 decide Dev; decide Meera; decide Farah
 curl -sf "$BASE/api/batches/$BATCH" -H "authorization: Bearer $ANIKA" | jq -c '{status: .batch.status, audit: [.batch.audit[].action]}'
+
+# Phase 3: the worker issues certificates asynchronously.
+for _ in $(seq 1 30); do
+  STATUS=$(curl -sf "$BASE/api/batches/$BATCH" -H "authorization: Bearer $ANIKA" | jq -r .batch.status)
+  [ "$STATUS" = ISSUED ] && break; sleep 1
+done
+echo "batch status: $STATUS"
+[ "$STATUS" = ISSUED ] || { echo "batch was not ISSUED within 30s" >&2; exit 1; }
+sleep 3 # let some deliveries go out (the default flaky provider retries with backoff)
+CERTS=$(curl -sf "$BASE/api/batches/$BATCH/certificates" -H "authorization: Bearer $ANIKA")
+echo "$CERTS" | jq -r '"certificates: \(.certificates | length)", "deliveries: \(.certificates | group_by(.delivery.status) | map("\(.[0].delivery.status)=\(length)") | join(" "))"'
+NO=$(echo "$CERTS" | jq -r '.certificates[0].certificateNo')
+curl -sf "$BASE/api/public/verify/$NO" | jq -c '{verify: .status, certificateNo, candidateName}'
+curl -sf -X POST "$BASE/api/certificates/$NO/revoke" -H "authorization: Bearer $(token Farah)" -H 'content-type: application/json' \
+  -d '{"reason":"Walkthrough: revoked to demonstrate verification"}' | jq -c '{revoke: .certificate.status}'
+curl -s "$BASE/api/public/verify/$NO" | jq -c '{verify: .status, certificateNo, revokedAt}'

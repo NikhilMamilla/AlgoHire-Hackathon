@@ -41,14 +41,20 @@ jobs:
         run: |
           npm test 2>&1 | tee test.log
           echo "::notice title=vitest::$(sed 's/\x1b\[[0-9;]*m//g' test.log | grep -E '^ *(Test Files|Tests) ' | tr -s ' ' | paste -sd ' ')"
-      - name: curl walkthrough (DRAFT -> APPROVED)
+      - name: curl walkthrough (DRAFT -> APPROVED -> ISSUED -> revoke)
         shell: bash
         working-directory: apps/api
         run: |
           npx tsx src/server.ts > server.log 2>&1 &
+          npx tsx src/worker.ts > worker.log 2>&1 &
           for i in $(seq 1 30); do curl -sf localhost:4000/api/health >/dev/null && break; sleep 1; done
           ../../scripts/walkthrough.sh | tee walk.log
-          echo "::notice title=walkthrough::$(tail -1 walk.log)"
+          echo "::notice title=walkthrough::$(paste -sd '|' walk.log)"
+          echo "::notice title=worker::$(grep -c '"worker started"' worker.log) workers started; $(grep -c 'job failed' worker.log) failed job attempts (flaky provider)"
+      - name: server/worker logs on failure
+        if: failure()
+        working-directory: apps/api
+        run: tail -n 60 server.log worker.log || true
       - run: npm run build -w apps/web
 
   docker:

@@ -2,6 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { prisma, redis } from '../src/lib.js';
+import { closeQueues } from '../src/queues.js';
 import {
   auditActions,
   csvOf,
@@ -21,6 +22,7 @@ const app = createApp();
 beforeEach(resetDb);
 afterAll(async () => {
   await prisma.$disconnect();
+  await closeQueues();
   redis.disconnect();
 });
 
