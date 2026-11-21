@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { Navigate, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, Navigate, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { api, session, type User } from './api';
 import { ROLE_LABEL } from './components';
 import BatchDetail from './pages/BatchDetail';
 import Batches from './pages/Batches';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Outbox from './pages/Outbox';
 import StateDashboard from './pages/StateDashboard';
@@ -43,8 +44,8 @@ export default function App() {
         <Route path="/verify" element={<Verify />} />
         <Route path="/verify/:certNo" element={<Verify />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Landing />} />
         <Route element={<Shell />}>
-          <Route path="/" element={<Navigate to="/batches" replace />} />
           <Route path="/batches" element={<Batches />} />
           <Route path="/batches/:id" element={<BatchDetail />} />
           <Route path="/state" element={<StateOnly><StateDashboard /></StateOnly>} />
@@ -75,7 +76,9 @@ function Shell() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">CertiFlow</div>
+        <Link to="/" className="brand">
+          CertiFlow
+        </Link>
         <nav aria-label="Main">
           <NavLink to="/batches" className="nav-link">
             Batches

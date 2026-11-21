@@ -1,0 +1,475 @@
+/* Landing, sign-in and state dashboard. Same tokens as styles.css; no gradients, 150ms transitions only. */
+
+/* ---------- Browser surfaces ---------- */
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Links styled as buttons or the wordmark never take the body-link underline. */
+a.btn,
+a.brand {
+  text-decoration: none;
+}
+.sidebar a.brand {
+  display: block;
+}
+
+/* ---------- Landing (public) ---------- */
+.landing {
+  min-height: 100vh;
+  background: var(--surface);
+  color: var(--text);
+}
+.landing-wrap {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.landing-head {
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 5;
+}
+.landing-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+.landing-head .brand {
+  padding: 0;
+  font-size: 17px;
+}
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+}
+.landing-nav > a:not(.btn) {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 150ms;
+}
+.landing-nav > a:not(.btn):hover {
+  color: var(--text);
+}
+.landing main > section {
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+.landing h2 {
+  font-size: 22px;
+  margin: 0 0 24px;
+  letter-spacing: -0.01em;
+}
+.landing h3 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+.landing p {
+  margin: 0;
+}
+.landing main > section.hero {
+  padding-top: 72px;
+  padding-bottom: 64px;
+}
+.hero h1 {
+  font-size: clamp(30px, 4.4vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  max-width: 20ch;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.hero-sub {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+}
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  margin: 28px 0 32px;
+  flex-wrap: wrap;
+}
+.hero-verify {
+  max-width: 440px;
+}
+.hero-verify label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.hero-verify-row {
+  display: flex;
+  gap: 8px;
+}
+.hero-verify-row input {
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+.landing .field-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 6px;
+}
+.landing-band {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.problem {
+  background: var(--surface);
+  padding: 18px;
+}
+.problem p,
+.flow-step p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  position: relative;
+}
+.flow::before {
+  /* the rail connecting the step markers */
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: calc(100% / 6 - 14px);
+  height: 1px;
+  background: var(--border-strong);
+}
+.flow-step {
+  position: relative;
+}
+.flow-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 12px;
+  position: relative;
+}
+.flow-step:last-child .flow-dot {
+  background: var(--accent);
+  color: #fff;
+}
+.guarantees {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px 32px;
+  margin: 0;
+}
+.guarantee dt {
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+.guarantee dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.arch {
+  width: 100%;
+  height: auto;
+  max-width: 880px;
+  display: block;
+}
+.arch-box {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+}
+.arch-box-strong {
+  stroke: var(--accent);
+  fill: var(--accent-soft);
+}
+.arch-title {
+  font: 600 14px var(--font);
+  fill: var(--text);
+}
+.arch-sub {
+  font: 12px var(--font);
+  fill: var(--muted);
+}
+.arch-line {
+  stroke: var(--muted);
+  stroke-width: 1.25;
+}
+.arch-line-dashed {
+  stroke-dasharray: 4 4;
+}
+.arch-arrow {
+  fill: var(--muted);
+}
+.landing .arch-caption {
+  margin-top: 14px;
+}
+.registry-figures {
+  display: flex;
+  gap: 48px;
+  margin: 0 0 12px;
+}
+.registry-figures dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.registry-figures dd {
+  margin: 2px 0 0;
+  font-size: 28px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.landing-foot {
+  padding: 24px 0 32px;
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 900px) {
+  .problem-grid,
+  .flow,
+  .guarantees {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .flow::before {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .landing-nav > a:not(.btn) {
+    display: none;
+  }
+  .problem-grid,
+  .flow,
+  .guarantees {
+    grid-template-columns: 1fr;
+  }
+  .registry-figures {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+/* ---------- Sign-in ---------- */
+.signin-card {
+  width: min(520px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 28px 20px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+.signin-card .brand {
+  padding: 0;
+  display: inline-block;
+}
+.signin-card h1 {
+  font-size: 22px;
+  margin: 14px 0 10px;
+}
+.signin-note {
+  background: var(--accent-soft);
+  border: 1px solid #cdd7ee;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  margin: 0 0 18px;
+}
+.signin-group h2 {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  margin: 16px 0 6px;
+}
+.signin-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.signin-group li + li {
+  border-top: 1px solid var(--border);
+}
+.signin-group .user-card {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  border-radius: 0;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.avatar {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650;
+}
+.user-card-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.user-card-action {
+  color: var(--muted);
+  font-size: 13px;
+  transition: color 150ms;
+}
+.user-card:hover:not(:disabled) .user-card-action {
+  color: var(--accent);
+}
+.signin-foot {
+  margin: 18px 0 0;
+}
+
+/* ---------- State dashboard ---------- */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.tile-danger .tile-value {
+  color: var(--danger);
+}
+.dash-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+.dash-grid > .card {
+  margin-bottom: 0;
+}
+.delivery-health {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.delivery-health dd {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.pipeline-bar {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  gap: 1px;
+}
+.pipeline-seg {
+  min-width: 4px;
+}
+.pipeline-legend {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+}
+.pipeline-legend a {
+  color: var(--muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pipeline-legend a:hover {
+  color: var(--text);
+}
+.pipeline-legend strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.seg-draft {
+  background: #c9ced4;
+}
+.seg-district_review {
+  background: #93a8d6;
+}
+.seg-quality_review {
+  background: #5f7fc4;
+}
+.seg-state_review {
+  background: var(--accent);
+}
+.seg-returned {
+  background: #d9a43a;
+}
+.seg-approved {
+  background: #6fb38a;
+}
+.seg-issued {
+  background: var(--success);
+}
+.seg-rejected {
+  background: var(--danger);
+}
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}

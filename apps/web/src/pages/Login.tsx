@@ -1,8 +1,25 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api, useAsync, type DemoUser, type User } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { api, useAsync, type DemoUser, type Role, type User } from '../api';
 import { useAuth } from '../App';
-import { Alert, ROLE_LABEL, Skeleton, errorText } from '../components';
+import { Alert, Skeleton, errorText } from '../components';
+
+const GROUPS: { role: Role; label: string }[] = [
+  { role: 'CENTRE', label: 'Training centre' },
+  { role: 'DISTRICT_OFFICER', label: 'District officers' },
+  { role: 'QUALITY', label: 'Quality team' },
+  { role: 'STATE', label: 'State office' },
+];
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+export const homeFor = (role: Role) => (role === 'STATE' ? '/state' : '/batches');
 
 export default function Login() {
   const { user, signIn } = useAuth();
@@ -17,36 +34,57 @@ export default function Login() {
     try {
       const res = await api<{ token: string; user: User }>('/auth/demo-login', { json: { userId: u.id } });
       signIn(res.token, { ...res.user, org: u.centreName ?? u.districtName ?? 'State-wide' });
-      navigate('/batches');
+      navigate(homeFor(res.user.role));
     } catch (e) {
       setError(errorText(e));
-    } finally {
       setBusy(null);
     }
   };
 
   return (
     <div className="login-page">
-      <div className="login-panel">
-        <div className="brand brand-dark">CertiFlow</div>
-        <h1>Choose a demo user</h1>
-        <p className="note">Demo sign-in: no passwords. All permissions are enforced by the server.</p>
-        {user && <p className="muted">Currently signed in as {user.name}. Pick another user to switch.</p>}
+      <div className="signin-card">
+        <Link to="/" className="brand brand-dark">
+          CertiFlow
+        </Link>
+        <h1>Sign in to CertiFlow</h1>
+        <p className="signin-note">
+          Demo environment: sign-in is one click by design so reviewers can switch roles. Every permission is enforced by the server.
+        </p>
+        {user && <p className="muted small">Signed in as {user.name}. Choose another user to switch.</p>}
         {error && <Alert>{error}</Alert>}
-        {users.loading && !users.data && <Skeleton rows={3} />}
         {users.error && <Alert>Could not load demo users: {errorText(users.error)}</Alert>}
-        <div className="user-grid">
-          {users.data?.users.map((u) => (
-            <button key={u.id} className="user-card" onClick={() => choose(u)} disabled={busy !== null}>
-              <span className="user-card-name">{u.name}</span>
-              <span className="user-card-role">{ROLE_LABEL[u.role]}</span>
-              <span className="muted">{u.centreName ?? u.districtName ?? 'State-wide'}</span>
-              {busy === u.id && <span className="muted">Signing in…</span>}
-            </button>
-          ))}
-        </div>
-        <p className="muted small">
-          Checking a certificate? <a href="/verify">Verify a certificate</a> — no sign-in needed.
+        {users.loading && !users.data && <Skeleton rows={4} />}
+
+        {users.data &&
+          GROUPS.map((g) => {
+            const members = users.data!.users.filter((u) => u.role === g.role);
+            if (!members.length) return null;
+            return (
+              <section key={g.role} className="signin-group" aria-labelledby={`group-${g.role}`}>
+                <h2 id={`group-${g.role}`}>{g.label}</h2>
+                <ul>
+                  {members.map((u) => (
+                    <li key={u.id}>
+                      <button className="user-card" onClick={() => choose(u)} disabled={busy !== null}>
+                        <span className="avatar" aria-hidden="true">
+                          {initials(u.name)}
+                        </span>
+                        <span className="user-card-text">
+                          <span className="user-card-name">{u.name}</span>
+                          <span className="muted small">{u.centreName ?? u.districtName ?? 'State-wide'}</span>
+                        </span>
+                        <span className="user-card-action">{busy === u.id ? 'Signing in…' : 'Sign in'}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+
+        <p className="muted small signin-foot">
+          Checking a certificate? <Link to="/verify">Verify it here</Link>, no sign-in needed.
         </p>
       </div>
     </div>
