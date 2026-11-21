@@ -7,9 +7,12 @@ import { authRouter } from './routes/auth.js';
 import { batchesRouter } from './routes/batches.js';
 import { certificatesRouter } from './routes/certificates.js';
 import { deliveriesRouter } from './routes/deliveries.js';
+import { publicRouter } from './routes/public.js';
 
 export function createApp() {
   const app = express();
+  // Behind nginx (one hop): req.ip is the client address nginx appends to X-Forwarded-For.
+  app.set('trust proxy', 1);
   app.use(
     pinoHttp({
       logger,
@@ -48,6 +51,7 @@ export function createApp() {
   app.use('/api', batchesRouter);
   app.use('/api', deliveriesRouter);
   app.use('/api', certificatesRouter);
+  app.use('/api', publicRouter);
 
   app.use(notFound);
   app.use(errorHandler);
