@@ -5,8 +5,8 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sample = (name: string) => path.resolve(here, '../../../samples', name);
-const shot = async (page: Page, name: string) => {
-  const opts = { path: path.join(here, 'screenshots', `${name}.png`), fullPage: true, animations: 'disabled' as const };
+const shot = async (page: Page, name: string, fullPage = true) => {
+  const opts = { path: path.join(here, 'screenshots', `${name}.png`), fullPage, animations: 'disabled' as const };
   // Chromium occasionally fails the very first capture of a run ("Unable to capture screenshot"); one retry clears it.
   await page.screenshot(opts).catch(async () => {
     await page.waitForTimeout(500);
@@ -26,7 +26,9 @@ async function newPage(browser: Browser, label: string) {
   const page = await (await browser.newContext()).newPage();
   page.on('console', (m) => {
     // Chrome logs every non-2xx response; the 422 from uploading invalid.csv is the expected, handled case.
-    if (m.type() === 'error' && !/status of 422/.test(m.text())) consoleErrors.push(`[${label}] ${m.text()}`);
+    // The narrow-screen test also looks up an unknown certificate on purpose (verify answers 404 INVALID).
+    const expected = label === 'narrow' ? /status of (422|404)/ : /status of 422/;
+    if (m.type() === 'error' && !expected.test(m.text())) consoleErrors.push(`[${label}] ${m.text()}`);
   });
   page.on('pageerror', (e) => consoleErrors.push(`[${label}] ${e.message}`));
   return page;
@@ -166,7 +168,8 @@ test('demo flow: upload, live review, issue, verify, revoke', async ({ browser }
     await expect(publicPage.getByText('Valid certificate')).toBeVisible();
     await expect(publicPage.locator('.details')).toContainText(certNo);
     await shot(publicPage, '06-verify-valid');
-    await publicPage.setViewportSize({ width: 390, height: 844 });
+    await publicPage.setViewportSize({ width: 360, height: 780 });
+    expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await shot(publicPage, '06b-verify-valid-mobile');
     await publicPage.setViewportSize({ width: 1280, height: 800 });
   });
@@ -199,12 +202,28 @@ test('landing page loads and "Sign in to the demo" leads to /login', async ({ br
   const page = await newPage(browser, 'landing');
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/can.t be faked/);
-  await expect(page.locator('.flow-step')).toHaveCount(6);
+  await expect(page.locator('.flow-step')).toHaveCount(7);
   await expect(page.getByRole('heading', { name: 'Live registry' })).toBeVisible();
-  await shot(page, '00-landing');
+  await shot(page, '00-landing', false); // above the fold
+  await shot(page, '00-landing-full');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await shot(page, 'landing-mobile');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.getByRole('link', { name: 'Sign in to the demo' }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: 'Sign in to CertiFlow' })).toBeVisible();
+});
+
+test('no horizontal scroll at 360px on landing, verify and login', async ({ browser }) => {
+  const page = await newPage(browser, 'narrow');
+  await page.setViewportSize({ width: 360, height: 780 });
+  for (const url of ['/', '/verify', '/verify/CF-0000000000', '/login']) {
+    await page.goto(url);
+    await expect(page.locator('main')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), url).toBe(true);
+  }
+  await shot(page, 'login-mobile');
 });
 
 test('a 60-candidate batch goes through quality review and issues 60 certificates', async ({ browser }) => {
