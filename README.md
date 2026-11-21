@@ -103,6 +103,7 @@ All routes are under `/api`. "Scoped" means a batch outside your scope is 404.
 | POST | `/certificates/:certNo/revoke` | STATE | `{ reason }`; 409 if already revoked; cancels an unsent delivery |
 | POST | `/deliveries/retry-failed` | STATE | Re-queue FAILED deliveries after an outage |
 | GET | `/public/verify/:certNo` | public, 60/min/IP | `{ status, certificateNo, candidateName, courseName, centreName, completionDate, issuedAt, revokedAt? }`; 404 `{ status: "INVALID" }`; 400 bad format; `Cache-Control: no-store` |
+| GET | `/public/stats` | public, 60/min/IP | Aggregate counts for the landing page: certificates issued and currently valid |
 | GET | `/stats` | STATE | Real counts: batches by status, certificates, deliveries by status, escalated |
 | GET | `/dev/outbox` | STATE | Simulated WhatsApp outbox (phones masked) |
 | GET | `/audit?entityType=&entityId=` | STATE | Audit rows (newest first) |
@@ -111,8 +112,8 @@ Errors are always `{ error: { code, message, details? } }`. A 500 never includes
 
 ## 6. Tests
 
-`docker compose run --rm api npm test` runs **45 API tests in 7 files** against a real Postgres test database
-(migrated and seeded by the global setup) and Redis. `npm run e2e -w apps/web` runs **6 Playwright browser tests**
+`docker compose run --rm api npm test` runs **46 API tests in 7 files** against a real Postgres test database
+(migrated and seeded by the global setup) and Redis. `npm run e2e -w apps/web` runs **7 Playwright browser tests**
 against the running stack (not in CI; it needs every service). CI runs the API tests, a curl walkthrough
 (`scripts/walkthrough.sh`, DRAFT → ISSUED → VALID → REVOKED), the web build, and `docker compose build`.
 

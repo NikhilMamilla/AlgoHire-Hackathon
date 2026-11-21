@@ -53,7 +53,7 @@ Or run the same flow from the command line (needs `curl` and `jq`): `bash script
 ## Tests
 
 ```sh
-docker compose run --rm api npm test     # 45 API tests, real Postgres test DB (certiflow_test) + Redis
+docker compose run --rm api npm test     # 46 API tests, real Postgres test DB (certiflow_test) + Redis
 ```
 
 Outside Docker (Node 20+, with the compose Postgres and Redis running, which publish 5432 and 6379):
@@ -68,7 +68,7 @@ Browser e2e (optional; needs the full stack up):
 ```sh
 npm install
 (cd apps/web && npx playwright install chromium)   # once
-npm run e2e -w apps/web                  # 6 tests; screenshots go to apps/web/e2e/screenshots/
+npm run e2e -w apps/web                  # 7 tests; screenshots go to apps/web/e2e/screenshots/
 ```
 
 ## Reset
