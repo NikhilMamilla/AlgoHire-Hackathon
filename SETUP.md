@@ -41,6 +41,11 @@ In `samples/` (also downloadable from the batch page at `/samples/*.csv`):
 
 ## Demo flow
 
+Open http://localhost:8080. The landing page explains the product and shows live registry counts. Click
+**Sign in to the demo**: the sign-in screen lists the demo users in three tiers (state office; district officers and
+quality; training centre). Pick one to sign in. Each user lands on their home screen (Farah on **State overview**,
+everyone else on **Batches**), and **Log out** in the top bar returns to sign-in.
+
 1. Anika: **New batch**, upload `invalid.csv` (row errors, nothing saved), upload `valid-10.csv`, **Submit for review**.
 2. Dev (in another browser or a private window): the batch appears in **Waiting for me** live. **Approve**. Then Meera approves.
 3. Farah: **Approve**. The worker issues 10 certificates; WhatsApp delivery statuses update live.
@@ -68,7 +73,7 @@ Browser e2e (optional; needs the full stack up):
 ```sh
 npm install
 (cd apps/web && npx playwright install chromium)   # once
-npm run e2e -w apps/web                  # 7 tests; screenshots go to apps/web/e2e/screenshots/
+npm run e2e -w apps/web                  # 15 tests; screenshots go to apps/web/e2e/screenshots/
 ```
 
 ## Reset
@@ -109,4 +114,5 @@ click **Retry failed deliveries** on the State overview.
 | `Cannot connect to the Docker daemon` / `docker: command not found` | Start Docker Desktop and wait until it says it is running; open a new terminal so `docker` is on PATH |
 | The API is unhealthy and its logs show it connecting to `localhost:5432` | You copied `.env.example` to `.env` with the `DATABASE_URL` / `REDIS_URL` lines uncommented. Leave them commented for Docker (they are only for running outside Docker) |
 | `docker compose run --rm api npm test` fails with `certiflow_test does not exist` | The test DB is created on Postgres's first start. Run `docker compose down -v` and start again |
+| `docker compose up --build` fails in the web build with "The cloud operation was unsuccessful" | The repo is in a OneDrive folder and Playwright output was in the build context as cloud-only files. `.dockerignore` excludes `test-results/`, `playwright-report/` and `apps/web/e2e`; delete any stray `test-results` folder, or pass `--output` outside the repo when running Playwright |
 | The web page loads but lists don't update live | Check `docker compose logs api` for Redis errors; the SSE stream is `/api/events` |

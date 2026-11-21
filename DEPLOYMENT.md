@@ -41,7 +41,8 @@ is asynchronous and queue-backed (`certificates` and `delivery` queues), so the 
                                WhatsApp Business API (Meta Cloud API / BSP)
 ```
 
-Locally the same shape runs as five compose services: `web` (nginx with the static build and the `/api` proxy),
+The diagram on the landing page and in the README (`apps/web/public/architecture.webp`) shows the local system as
+built, not this target. Locally the same shape runs as five compose services: `web` (nginx with the static build and the `/api` proxy),
 `api`, `worker` (the same image as `api`, entrypoint `src/worker.ts`), `postgres` and `redis` (AOF on).
 
 **Event flow (implemented, as in the code):**
@@ -169,7 +170,7 @@ queue, so a WhatsApp slowdown never delays issuance.
 | Read replica (optional at launch) | db.t4g.medium | 60 |
 | ElastiCache Redis | cache.t4g.small primary + replica | 50 |
 | ALB | 1 | 25 |
-| S3 + CloudFront | ~100k PDFs/year at ~140 KB each (~14 GB/year), plus the static site | 5–10 |
+| S3 + CloudFront | ~100k PDFs/year at ~140 KB each (~14 GB/year), plus the static site (JS/CSS, self-hosted fonts, a 153 KB WebP diagram) | 5–10 |
 | NAT gateway + data transfer | 1 NAT | 40 |
 | CloudWatch logs/metrics/alarms | | 30 |
 | **Infra total** | | **~$460–535** |
@@ -209,7 +210,7 @@ These are list-price estimates, not quotes.
 | Verification cache | **No** | always reads Postgres |
 | Metrics, alerts, dashboards | **No** | `/api/stats` only |
 | Backups / PITR | **No** | managed-service feature |
-| CD and E2E in CI | **No** | `npm run e2e -w apps/web` runs locally against compose |
+| CD and E2E in CI | **No** | `npm run e2e -w apps/web` (15 tests) runs locally against compose |
 
 ## 10. Release steps (when built)
 
