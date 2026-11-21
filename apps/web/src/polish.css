@@ -2,11 +2,11 @@
 
 /* ---------- Browser surfaces ---------- */
 ::selection {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--primary-50);
+  color: var(--primary);
 }
 :where(a, button, input, textarea, select):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -17,272 +17,6 @@ a.brand {
 }
 .sidebar a.brand {
   display: block;
-}
-
-/* ---------- Landing (public) ---------- */
-.landing {
-  min-height: 100vh;
-  background: var(--surface);
-  color: var(--text);
-}
-.landing-wrap {
-  width: min(1080px, 100%);
-  margin: 0 auto;
-  padding: 0 24px;
-}
-.landing-head {
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--surface);
-  z-index: 5;
-}
-.landing-head-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 56px;
-}
-.landing-head .brand {
-  padding: 0;
-  font-size: 17px;
-}
-.landing-nav {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  font-size: 14px;
-}
-.landing-nav > a:not(.btn) {
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 150ms;
-}
-.landing-nav > a:not(.btn):hover {
-  color: var(--text);
-}
-.landing main > section {
-  padding-top: 56px;
-  padding-bottom: 56px;
-}
-.landing h2 {
-  font-size: 22px;
-  margin: 0 0 24px;
-  letter-spacing: -0.01em;
-}
-.landing h3 {
-  font-size: 15px;
-  margin: 0 0 6px;
-}
-.landing p {
-  margin: 0;
-}
-.landing main > section.hero {
-  padding-top: 72px;
-  padding-bottom: 64px;
-}
-.hero h1 {
-  font-size: clamp(30px, 4.4vw, 44px);
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-  max-width: 20ch;
-  margin: 0 0 18px;
-  text-wrap: balance;
-}
-.hero-sub {
-  font-size: 17px;
-  line-height: 1.55;
-  color: var(--muted);
-  max-width: 62ch;
-}
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  margin: 28px 0 32px;
-  flex-wrap: wrap;
-}
-.hero-verify {
-  max-width: 440px;
-}
-.hero-verify label {
-  display: block;
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-.hero-verify-row {
-  display: flex;
-  gap: 8px;
-}
-.hero-verify-row input {
-  flex: 1;
-  min-width: 0;
-  text-transform: uppercase;
-}
-.landing .field-error {
-  color: var(--danger);
-  font-size: 13px;
-  margin-top: 6px;
-}
-.landing-band {
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.problem-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.problem {
-  background: var(--surface);
-  padding: 18px;
-}
-.problem p,
-.flow-step p {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-.flow {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
-  position: relative;
-}
-.flow::before {
-  /* the rail connecting the step markers */
-  content: '';
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  right: calc(100% / 6 - 14px);
-  height: 1px;
-  background: var(--border-strong);
-}
-.flow-step {
-  position: relative;
-}
-.flow-dot {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--accent);
-  background: var(--surface);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 12px;
-  position: relative;
-}
-.flow-step:last-child .flow-dot {
-  background: var(--accent);
-  color: #fff;
-}
-.guarantees {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px 32px;
-  margin: 0;
-}
-.guarantee dt {
-  font-weight: 650;
-  margin-bottom: 6px;
-}
-.guarantee dd {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-.arch {
-  width: 100%;
-  height: auto;
-  max-width: 880px;
-  display: block;
-}
-.arch-box {
-  fill: var(--surface);
-  stroke: var(--border-strong);
-}
-.arch-box-strong {
-  stroke: var(--accent);
-  fill: var(--accent-soft);
-}
-.arch-title {
-  font: 600 14px var(--font);
-  fill: var(--text);
-}
-.arch-sub {
-  font: 12px var(--font);
-  fill: var(--muted);
-}
-.arch-line {
-  stroke: var(--muted);
-  stroke-width: 1.25;
-}
-.arch-line-dashed {
-  stroke-dasharray: 4 4;
-}
-.arch-arrow {
-  fill: var(--muted);
-}
-.landing .arch-caption {
-  margin-top: 14px;
-}
-.registry-figures {
-  display: flex;
-  gap: 48px;
-  margin: 0 0 12px;
-}
-.registry-figures dt {
-  color: var(--muted);
-  font-size: 13px;
-}
-.registry-figures dd {
-  margin: 2px 0 0;
-  font-size: 28px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.landing-foot {
-  padding: 24px 0 32px;
-  color: var(--muted);
-  font-size: 13px;
-}
-@media (max-width: 900px) {
-  .problem-grid,
-  .flow,
-  .guarantees {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .flow::before {
-    display: none;
-  }
-}
-@media (max-width: 560px) {
-  .landing-nav > a:not(.btn) {
-    display: none;
-  }
-  .problem-grid,
-  .flow,
-  .guarantees {
-    grid-template-columns: 1fr;
-  }
-  .registry-figures {
-    flex-direction: column;
-    gap: 16px;
-  }
 }
 
 /* ---------- Sign-in ---------- */
@@ -303,9 +37,9 @@ a.brand {
   margin: 14px 0 10px;
 }
 .signin-note {
-  background: var(--accent-soft);
+  background: var(--primary-50);
   border: 1px solid #cdd7ee;
-  color: var(--accent);
+  color: var(--primary);
   font-size: 13px;
   line-height: 1.45;
   padding: 9px 12px;
@@ -315,7 +49,7 @@ a.brand {
 .signin-group h2 {
   font-size: 12px;
   font-weight: 650;
-  color: var(--muted);
+  color: var(--text-3);
   margin: 16px 0 6px;
 }
 .signin-group ul {
@@ -346,8 +80,8 @@ a.brand {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--primary-50);
+  color: var(--primary);
   font-size: 12px;
   font-weight: 650;
 }
@@ -358,12 +92,12 @@ a.brand {
   min-width: 0;
 }
 .user-card-action {
-  color: var(--muted);
+  color: var(--text-3);
   font-size: 13px;
   transition: color 150ms;
 }
 .user-card:hover:not(:disabled) .user-card-action {
-  color: var(--accent);
+  color: var(--primary);
 }
 .signin-foot {
   margin: 18px 0 0;
@@ -423,7 +157,7 @@ a.brand {
   font-size: 13px;
 }
 .pipeline-legend a {
-  color: var(--muted);
+  color: var(--text-3);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -451,7 +185,7 @@ a.brand {
   background: #5f7fc4;
 }
 .seg-state_review {
-  background: var(--accent);
+  background: var(--primary);
 }
 .seg-returned {
   background: #d9a43a;
