@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CENTRE
+  DISTRICT_OFFICER
+  QUALITY
+  STATE
+}
+
+enum BatchStatus {
+  DRAFT
+  DISTRICT_REVIEW
+  QUALITY_REVIEW
+  STATE_REVIEW
+  APPROVED
+  ISSUED
+  RETURNED
+  REJECTED
+}
+
+enum Stage {
+  DISTRICT
+  QUALITY
+  STATE
+}
+
+enum DecisionType {
+  APPROVE
+  REJECT
+  RETURN
+}
+
+enum CertificateStatus {
+  VALID
+  REVOKED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model District {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  centres Centre[]
+  users   User[]
+  batches Batch[]
+}
+
+model Centre {
+  id         String   @id @default(cuid())
+  name       String
+  districtId String
+  district   District @relation(fields: [districtId], references: [id])
+  users      User[]
+  batches    Batch[]
+}
+
+model User {
+  id         String     @id @default(cuid())
+  name       String
+  email      String     @unique
+  role       Role
+  districtId String?
+  district   District?  @relation(fields: [districtId], references: [id])
+  centreId   String?
+  centre     Centre?    @relation(fields: [centreId], references: [id])
+  batches    Batch[]
+  decisions  Decision[]
+}
+
+model Batch {
+  id             String        @id @default(cuid())
+  centreId       String
+  centre         Centre        @relation(fields: [centreId], references: [id])
+  districtId     String
+  district       District      @relation(fields: [districtId], references: [id])
+  courseName     String
+  status         BatchStatus   @default(DRAFT)
+  round          Int           @default(1)
+  version        Int           @default(0)
+  stageEnteredAt DateTime?
+  escalatedAt    DateTime?
+  createdById    String
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  candidates     Candidate[]
+  decisions      Decision[]
+  certificates   Certificate[]
+}
+
+model Candidate {
+  id             String       @id @default(cuid())
+  batchId        String
+  batch          Batch        @relation(fields: [batchId], references: [id])
+  candidateRef   String
+  fullName       String
+  phone          String
+  completionDate DateTime
+  createdAt      DateTime     @default(now())
+  certificate    Certificate?
+
+  @@unique([batchId, candidateRef])
+}
+
+/// One decision per officer per stage per round (DB-level double-approval guard).
+model Decision {
+  id        String       @id @default(cuid())
+  batchId   String
+  batch     Batch        @relation(fields: [batchId], references: [id])
+  stage     Stage
+  round     Int
+  actorId   String
+  actor     User         @relation(fields: [actorId], references: [id])
+  type      DecisionType
+  reason    String?
+  createdAt DateTime     @default(now())
+
+  @@unique([batchId, stage, round, actorId])
+}
+
+/// Exactly one certificate per candidate per batch.
+model Certificate {
+  id            String            @id @default(cuid())
+  certificateNo String            @unique
+  batchId       String
+  batch         Batch             @relation(fields: [batchId], references: [id])
+  candidateId   String            @unique
+  candidate     Candidate         @relation(fields: [candidateId], references: [id])
+  status        CertificateStatus @default(VALID)
+  issuedAt      DateTime          @default(now())
+  revokedAt     DateTime?
+  revokedById   String?
+  revokeReason  String?
+  delivery      Delivery?
+
+  @@unique([batchId, candidateId])
+}
+
+model Delivery {
+  id                String         @id @default(cuid())
+  certificateId     String         @unique
+  certificate       Certificate    @relation(fields: [certificateId], references: [id])
+  status            DeliveryStatus @default(PENDING)
+  attempts          Int            @default(0)
+  lastError         String?
+  providerMessageId String?
+  updatedAt         DateTime       @updatedAt
+}
+
+/// Append-only: a DB trigger rejects UPDATE/DELETE.
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}

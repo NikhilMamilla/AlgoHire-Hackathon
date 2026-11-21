@@ -1,0 +1,37 @@
+{
+  "name": "@certiflow/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "start": "tsx src/server.ts",
+    "start:worker": "tsx src/worker.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bullmq": "^5.34.0",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.17.10",
+    "@types/supertest": "^6.0.2",
+    "prisma": "^5.22.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

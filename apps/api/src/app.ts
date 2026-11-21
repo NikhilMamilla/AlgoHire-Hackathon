@@ -1,0 +1,46 @@
+import { randomUUID } from 'node:crypto';
+import express from 'express';
+import { pinoHttp } from 'pino-http';
+import { errorHandler, notFound } from './errors.js';
+import { logger, prisma, redis } from './lib.js';
+
+export function createApp() {
+  const app = express();
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req, res) => {
+        const id = (req.headers['x-request-id'] as string) ?? randomUUID();
+        res.setHeader('x-request-id', id);
+        return id;
+      },
+    }),
+  );
+  app.use(express.json({ limit: '2mb' }));
+
+  app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  app.get('/api/health/ready', async (_req, res) => {
+    const check = async (fn: () => Promise<unknown>) => {
+      try {
+        // Without a timeout a down Redis (maxRetriesPerRequest: null) hangs the probe forever.
+        await Promise.race([fn(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2000))]);
+        return { status: 'ok' as const };
+      } catch (e) {
+        return { status: 'error' as const, error: (e as Error).message };
+      }
+    };
+    const [postgres, redisCheck] = await Promise.all([
+      check(() => prisma.$queryRaw`SELECT 1`),
+      check(() => redis.ping()),
+    ]);
+    const ok = postgres.status === 'ok' && redisCheck.status === 'ok';
+    res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', checks: { postgres, redis: redisCheck } });
+  });
+
+  app.use(notFound);
+  app.use(errorHandler);
+  return app;
+}
