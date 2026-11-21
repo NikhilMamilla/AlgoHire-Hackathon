@@ -1,0 +1,465 @@
+/*
+ * Morphism layer (loaded last). Four materials, each with one job:
+ *  1. Glassmorphism   – frosted header, hero card and sign-in panels over a soft brand mesh.
+ *  2. Liquid glass    – the GooeyNav section nav (components/GooeyNav).
+ *  3. Holo-morphism   – an iridescent security-foil strip on certificate results, like the foil on a real certificate.
+ *  4. Paper + clay    – stacked-paper elevation for content cards; inflated clay tiles for the six roles.
+ * The guilloche texture is zoomed to the certificate's central rosette so its frame and boxes never show.
+ * Text always sits on an opaque-enough surface to keep WCAG AA contrast. Motion stops under prefers-reduced-motion.
+ */
+:root {
+  --mesh-1: rgba(27, 58, 122, 0.22); /* navy */
+  --mesh-2: rgba(194, 86, 12, 0.16); /* saffron */
+  --mesh-3: rgba(15, 118, 110, 0.14); /* teal */
+  --mesh-4: rgba(124, 58, 237, 0.1); /* violet, only inside the mesh */
+  --glass-bg: rgba(255, 255, 255, 0.66);
+  --glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-edge: rgba(14, 23, 38, 0.08);
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 20px 50px -24px rgba(14, 23, 38, 0.35), 0 4px 14px -6px rgba(14, 23, 38, 0.12);
+  --holo: linear-gradient(110deg, #c7d2fe 0%, #a5f3fc 16%, #bbf7d0 32%, #fef08a 48%, #fecaca 64%, #e9d5ff 80%, #c7d2fe 100%);
+  --paper-shadow: 0 1px 0 rgba(14, 23, 38, 0.04), 0 3px 0 -1px var(--surface), 0 4px 0 -1px rgba(14, 23, 38, 0.07), 0 6px 0 -2px var(--surface),
+    0 7px 0 -2px rgba(14, 23, 38, 0.05), 0 18px 30px -18px rgba(14, 23, 38, 0.28);
+}
+
+/* ---------- Shared backdrop: brand mesh + guilloche security texture ---------- */
+.mesh-bg {
+  position: relative;
+  isolation: isolate;
+  background-color: #f3f5fa;
+  background-image:
+    radial-gradient(42rem 28rem at 12% 8%, var(--mesh-1), transparent 70%),
+    radial-gradient(36rem 26rem at 92% 14%, var(--mesh-2), transparent 70%),
+    radial-gradient(40rem 30rem at 78% 92%, var(--mesh-3), transparent 70%),
+    radial-gradient(30rem 22rem at 30% 96%, var(--mesh-4), transparent 70%);
+}
+.mesh-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('/textures/guilloche.jpg') center 45% / max(260%, 340vh) auto no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* ---------- Holographic security foil ---------- */
+.holo-strip {
+  position: relative;
+}
+.holo-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+  z-index: 1;
+}
+@keyframes holo-shift {
+  to {
+    background-position: 300% 0;
+  }
+}
+
+/* ---------- Landing: glass header + liquid-glass GooeyNav ---------- */
+.lp-head {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  border-bottom: 1px solid var(--glass-edge);
+}
+.lp-gooey {
+  margin-left: auto;
+}
+.lp-gooey .gooey-nav__link {
+  min-height: 36px;
+  font-family: var(--font);
+  font-weight: 550;
+}
+.lp-head-link {
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: var(--fs-14);
+  font-weight: 550;
+  padding: 0 var(--s-2);
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+.lp-head-link:hover {
+  color: var(--primary);
+}
+
+/* ---------- Landing: hero on the mesh, glass example card with holo foil ---------- */
+.lp-hero {
+  position: relative;
+  isolation: isolate;
+  background-color: #f3f5fa;
+  background-image:
+    radial-gradient(42rem 28rem at 8% 10%, var(--mesh-1), transparent 70%),
+    radial-gradient(36rem 26rem at 96% 18%, var(--mesh-2), transparent 70%),
+    radial-gradient(40rem 30rem at 72% 100%, var(--mesh-3), transparent 70%),
+    radial-gradient(30rem 22rem at 30% 100%, var(--mesh-4), transparent 70%);
+}
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('/textures/guilloche.jpg') center 45% / max(260%, 340vh) auto no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.3;
+  pointer-events: none;
+}
+.lp-example-card {
+  position: relative;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.lp-example-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+  z-index: 1;
+}
+.lp-example-band {
+  background: rgba(234, 247, 239, 0.85);
+}
+.lp-example-tag {
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.lp-facts {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--s-4) var(--s-6);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ---------- Landing: paper cards ---------- */
+.lp-card,
+.lp-guarantee {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--paper-shadow);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.lp-guarantee {
+  padding: var(--s-6);
+}
+@media (hover: hover) {
+  .lp-card:hover,
+  .lp-guarantee:hover {
+    transform: translateY(-3px);
+  }
+}
+
+/* ---------- Landing: clay role tiles ---------- */
+.lp-roles {
+  gap: var(--s-5) !important;
+}
+.lp-role {
+  border: none !important;
+  border-radius: 22px;
+  padding: var(--s-6) !important;
+  box-shadow:
+    inset 6px 6px 14px rgba(255, 255, 255, 0.75),
+    inset -6px -8px 16px rgba(14, 23, 38, 0.07),
+    0 18px 30px -18px rgba(14, 23, 38, 0.3);
+  transition: transform 200ms ease;
+}
+.lp-role:nth-child(6n + 1) {
+  background: #fde9d9;
+}
+.lp-role:nth-child(6n + 2) {
+  background: #dde6f7;
+}
+.lp-role:nth-child(6n + 3) {
+  background: #dcf0ff;
+}
+.lp-role:nth-child(6n + 4) {
+  background: #ddf3e6;
+}
+.lp-role:nth-child(6n + 5) {
+  background: #fdf0cf;
+}
+.lp-role:nth-child(6n + 6) {
+  background: #ece6fb;
+}
+.lp-role p {
+  color: var(--text-2);
+}
+@media (hover: hover) {
+  .lp-role:hover {
+    transform: translateY(-3px) scale(1.01);
+  }
+}
+
+/* ---------- Landing: CTA band with texture ---------- */
+.lp-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image:
+    radial-gradient(36rem 20rem at 100% 0%, rgba(194, 86, 12, 0.35), transparent 70%),
+    radial-gradient(30rem 18rem at 0% 100%, rgba(47, 91, 181, 0.45), transparent 70%);
+}
+.lp-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('/textures/guilloche.jpg') center 45% / max(260%, 340vh) auto no-repeat;
+  mix-blend-mode: soft-light;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ---------- App: paper cards, glass top bar ---------- */
+.card,
+.tile {
+  box-shadow: var(--paper-shadow);
+}
+.topbar {
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+/* ---------- Verify: mesh backdrop, glass result, holo foil on VALID ---------- */
+.public {
+  position: relative;
+  isolation: isolate;
+  background-color: #f3f5fa;
+  background-image:
+    radial-gradient(40rem 26rem at 10% 0%, var(--mesh-1), transparent 70%),
+    radial-gradient(34rem 24rem at 100% 30%, var(--mesh-2), transparent 70%),
+    radial-gradient(36rem 26rem at 40% 100%, var(--mesh-3), transparent 70%);
+}
+.public::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('/textures/guilloche.jpg') center 45% / max(260%, 340vh) auto no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+  pointer-events: none;
+}
+.public-head,
+.public-foot {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.result {
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: var(--glass-shadow);
+}
+.result-valid {
+  position: relative;
+}
+.result-valid::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+  z-index: 1;
+}
+.result-valid .result-band {
+  padding-top: calc(var(--s-5) + 4px);
+}
+
+/* ---------- Sign-in: fits one screen, glass on the mesh ---------- */
+.login-page.mesh-bg {
+  height: 100dvh;
+  min-height: 0;
+  padding: var(--s-6);
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  overflow: hidden;
+}
+.login-split {
+  width: min(1040px, 100%);
+  max-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+  gap: var(--s-6);
+  align-items: stretch;
+}
+.login-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--s-6);
+  padding: var(--s-8);
+  border-radius: var(--radius-lg);
+  background: rgba(27, 58, 122, 0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-inverse);
+  position: relative;
+  overflow: hidden;
+}
+.login-aside::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 5px;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+}
+.login-aside .brand {
+  color: var(--text-inverse);
+}
+.login-aside h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-30);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-inverse);
+  margin: 0 0 var(--s-3);
+  text-wrap: balance;
+}
+.login-aside p,
+.login-aside li {
+  color: var(--primary-100);
+  font-size: var(--fs-14);
+  line-height: 1.55;
+}
+.login-aside ul {
+  margin: 0;
+  padding-left: var(--s-5);
+  display: grid;
+  gap: var(--s-2);
+}
+.login-aside a {
+  color: var(--text-inverse);
+}
+.login-split .signin-card {
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  padding: var(--s-6) var(--s-6) var(--s-4);
+}
+.login-split .signin-card h1 {
+  font-size: var(--fs-24);
+  margin: var(--s-3) 0 var(--s-2);
+}
+.login-split .signin-note {
+  margin-bottom: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--fs-13);
+}
+.login-split .signin-group h2 {
+  margin: var(--s-3) 0 var(--s-1);
+}
+.login-split .signin-group ul {
+  background: rgba(255, 255, 255, 0.7);
+}
+.login-split .signin-group .user-card {
+  min-height: 48px;
+  padding: 6px var(--s-3);
+  background: transparent;
+}
+.login-split .signin-group .user-card:hover:not(:disabled) {
+  background: var(--primary-50);
+}
+.login-split .avatar {
+  width: 32px;
+  height: 32px;
+}
+.login-split .signin-foot {
+  margin-top: var(--s-3);
+}
+@media (max-width: 900px) {
+  .login-split {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(480px, 100%);
+  }
+  .login-aside {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .login-page.mesh-bg {
+    padding: var(--s-3);
+  }
+  .login-split .signin-card {
+    padding: var(--s-4) var(--s-4) var(--s-3);
+  }
+}
+/* Short screens: tighten so the whole sign-in still fits without scrolling. */
+@media (max-height: 760px) {
+  .login-split .signin-card h1 {
+    margin-top: var(--s-2);
+    font-size: var(--fs-20);
+  }
+  .login-split .signin-group h2 {
+    margin-top: var(--s-2);
+  }
+  .login-split .signin-group .user-card {
+    min-height: 42px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+  .login-split .avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-strip::before,
+  .lp-example-card::before,
+  .result-valid::before,
+  .login-aside::after {
+    animation: none;
+  }
+  .lp-card,
+  .lp-guarantee,
+  .lp-role {
+    transition: none;
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lp-head,
+  .topbar,
+  .public-head,
+  .public-foot {
+    background: var(--surface);
+  }
+  .result,
+  .lp-example-card,
+  .login-split .signin-card {
+    background: var(--surface);
+  }
+}

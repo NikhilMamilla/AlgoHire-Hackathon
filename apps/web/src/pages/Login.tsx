@@ -42,12 +42,26 @@ export default function Login() {
   };
 
   return (
-    <main className="login-page" id="main" tabIndex={-1}>
-      <div className="signin-card">
-        <Link to="/" className="brand brand-dark">
-          <Mark size={28} />
+    <main className="login-page mesh-bg" id="main" tabIndex={-1}>
+      <div className="login-split">
+      <aside className="login-aside" aria-label="About this demo">
+        <Link to="/" className="brand">
+          <Mark size={30} />
           CertiFlow
         </Link>
+        <div>
+          <h2>Every role in the certificate pipeline, one click away.</h2>
+          <ul>
+            <li>Training centres upload a candidate CSV and submit it.</li>
+            <li>District, quality and state reviewers approve, return or reject.</li>
+            <li>Certificates are issued and sent on WhatsApp; anyone can verify them.</li>
+          </ul>
+        </div>
+        <p>
+          <Link to="/">About CertiFlow</Link> · <Link to="/verify">Verify a certificate</Link>
+        </p>
+      </aside>
+      <div className="signin-card">
         <h1>Sign in to CertiFlow</h1>
         <p className="signin-note">
           Demo environment: sign-in is one click by design so reviewers can switch roles. Every permission is enforced by the server.
@@ -90,6 +104,7 @@ export default function Login() {
         <p className="muted small signin-foot">
           Checking a certificate? <Link to="/verify">Verify it here</Link>, no sign-in needed.
         </p>
+      </div>
       </div>
     </main>
   );

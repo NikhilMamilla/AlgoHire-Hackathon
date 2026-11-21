@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GooeyNav from '../components/GooeyNav/GooeyNav';
 import { useAuth } from '../App';
 
 const REPO = 'https://github.com/NikhilMamilla/AlgoHire-Hackathon';
@@ -99,11 +100,54 @@ function Section({ id, title, intro, tone = 'surface', children }: { id: string;
   );
 }
 
+const NAV_ITEMS = [
+  { label: 'Overview', href: '#overview' },
+  { label: 'Problem', href: '#problem' },
+  { label: 'How it works', href: '#how' },
+  { label: 'Guarantees', href: '#guarantees' },
+  { label: 'Architecture', href: '#architecture' },
+];
+
+const pinned = { current: { index: 0, until: 0 } };
+
+/** Scroll spy: the nav pill follows the section being read (last section whose top passed the header). */
+function useActiveSection() {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (Date.now() < pinned.current.until) return setActive(pinned.current.index);
+        let index = 0;
+        NAV_ITEMS.forEach((item, i) => {
+          const el = document.getElementById(item.href.slice(1));
+          if (el && el.getBoundingClientRect().top <= 140) index = i;
+        });
+        setActive(index);
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+  return Date.now() < pinned.current.until ? pinned.current.index : active;
+}
+
 export default function Landing() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [certNo, setCertNo] = useState('');
   const [formatError, setFormatError] = useState(false);
+  const activeSection = useActiveSection();
+  const [, force] = useState(0);
+  const setActiveSection = (i: number) => {
+    pinned.current = { index: i, until: Date.now() + 900 }; // keep the clicked pill while the page scrolls there
+    force((n) => n + 1);
+  };
   const [stats, setStats] = useState<{ certificatesIssued: number; validCertificates: number } | null | 'error'>(null);
 
   useEffect(() => {
@@ -128,13 +172,22 @@ export default function Landing() {
             <Mark />
             <span>CertiFlow</span>
           </Link>
-          <nav className="lp-nav" aria-label="Page sections">
-            <a href="#problem">Problem</a>
-            <a href="#how">How it works</a>
-            <a href="#guarantees">Guarantees</a>
-            <a href="#architecture">Architecture</a>
-            <Link to="/verify">Verify</Link>
-          </nav>
+          <GooeyNav
+            ariaLabel="Page sections"
+            className="lp-gooey"
+            items={NAV_ITEMS}
+            activeIndex={activeSection}
+            onChange={(i) => setActiveSection(i)}
+            theme="light"
+            size="sm"
+            color="#1b3a7a"
+            colors={['#1b3a7a', '#c2560c', '#2f5bb5']}
+            particleCount={12}
+            animationTime={550}
+          />
+          <Link to="/verify" className="lp-head-link">
+            Verify
+          </Link>
           {user ? (
             <Link to={user.role === 'STATE' ? '/state' : '/batches'} className="btn btn-primary lp-head-cta">
               Go to dashboard
@@ -148,7 +201,7 @@ export default function Landing() {
       </header>
 
       <main id="main">
-        <section className="lp-hero" aria-labelledby="hero-title">
+        <section className="lp-hero" id="overview" aria-labelledby="hero-title">
           <div className="lp-wrap lp-hero-grid">
             <div className="lp-hero-copy">
               <p className="lp-eyebrow">Pragati Skills Mission · fictional state programme</p>

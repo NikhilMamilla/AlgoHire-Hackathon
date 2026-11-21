@@ -105,6 +105,10 @@ function Shell() {
     signOut();
     navigate('/login');
   };
+  const logOut = () => {
+    signOut();
+    navigate('/', { replace: true });
+  };
   const crumbs = crumbsFor(pathname);
 
   return (
@@ -175,6 +179,18 @@ function Shell() {
             ))}
           </ol>
         </nav>
+        <div className="topbar-actions">
+          <span className="topbar-who">
+            <span className={`avatar avatar-${user.role.toLowerCase()}`} aria-hidden="true">
+              {user.name.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="topbar-name">{user.name}</span>
+          </span>
+          <button className="btn btn-secondary btn-sm" onClick={logOut}>
+            <Icon name="logout" />
+            Log out
+          </button>
+        </div>
       </header>
       <main className="content" id="main" tabIndex={-1}>
         <Outlet />

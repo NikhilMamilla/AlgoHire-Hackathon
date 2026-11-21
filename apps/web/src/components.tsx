@@ -190,13 +190,14 @@ export function Mark({ size = 24 }: { size?: number }) {
 }
 
 /** Small line icons (aria-hidden); text labels always sit next to them. */
-export function Icon({ name, size = 16 }: { name: 'check' | 'cross' | 'chevron' | 'menu' | 'copy'; size?: number }) {
+export function Icon({ name, size = 16 }: { name: 'check' | 'cross' | 'chevron' | 'menu' | 'copy' | 'logout'; size?: number }) {
   const paths: Record<string, string> = {
     check: 'M5 12.5l4.5 4.5L19 7.5',
     cross: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
     chevron: 'M9.5 6l6 6-6 6',
     menu: 'M4 7h16M4 12h16M4 17h16',
     copy: 'M9 9h10v10H9zM5 15V5h10',
+    logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -277,6 +277,25 @@ a:hover {
   color: var(--text);
   font-weight: 600;
 }
+/* Top-bar right side: who is signed in + log out */
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.topbar-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+.topbar-who .avatar {
+  width: 28px;
+  height: 28px;
+  font-size: var(--fs-12);
+}
 .topbar .menu-button {
   display: none;
 }

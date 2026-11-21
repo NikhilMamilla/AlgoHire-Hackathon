@@ -226,6 +226,44 @@ test('no horizontal scroll at 360px on landing, verify and login', async ({ brow
   await shot(page, 'login-mobile');
 });
 
+test('sign-in fits one screen with no scrolling', async ({ browser }) => {
+  const page = await newPage(browser, 'signin');
+  for (const [width, height] of [[1440, 900], [1280, 720], [1024, 700], [390, 844], [360, 740]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/login');
+    await expect(page.locator('.user-card')).toHaveCount(6);
+    const fits = await page.evaluate(() => {
+      const el = document.documentElement;
+      const last = [...document.querySelectorAll('.user-card')].pop()!.getBoundingClientRect();
+      return el.scrollHeight <= window.innerHeight && el.scrollWidth <= window.innerWidth && last.bottom <= window.innerHeight;
+    });
+    expect(fits, `${width}x${height}`).toBe(true);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/login');
+  await shot(page, '01-login', false);
+});
+
+test('log out from the dashboard ends the session', async ({ browser }) => {
+  const farah = await loginAs(browser, 'Farah');
+  await expect(farah).toHaveURL(/\/state$/);
+  await farah.getByRole('button', { name: 'Log out' }).click();
+  await expect(farah).toHaveURL(/\/$/);
+  expect(await farah.evaluate(() => localStorage.getItem('certiflow.token'))).toBeNull();
+  await farah.goto('/state');
+  await expect(farah).toHaveURL(/\/login$/);
+});
+
+test('landing nav: clicking a section moves the active pill', async ({ browser }) => {
+  const page = await newPage(browser, 'nav');
+  await page.goto('/');
+  const nav = page.getByRole('navigation', { name: 'Page sections' });
+  await expect(nav.locator('[aria-current="page"]')).toHaveText('Overview');
+  await nav.getByRole('link', { name: 'Guarantees' }).click();
+  await expect(nav.locator('[aria-current="page"]')).toHaveText('Guarantees');
+  await expect(page.locator('#guarantees')).toBeInViewport();
+});
+
 test('a 60-candidate batch goes through quality review and issues 60 certificates', async ({ browser }) => {
   const { url } = await submittedBatch(browser, 'valid-60.csv', 60);
   for (const name of ['Dev', 'Meera']) {
