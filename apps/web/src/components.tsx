@@ -141,6 +141,6 @@ export const fmtDate = (iso: string | null | undefined) =>
 export const fmtDateTime = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : '—';
 
-export const humanize = (code: string) => code.charAt(0) + code.slice(1).toLowerCase().replace(/_/g, ' ');
+export const humanize = (code: string) => (code.charAt(0) + code.slice(1).toLowerCase().replace(/_/g, ' ')).replace(/^Csv\b/, 'CSV');
 
 export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));

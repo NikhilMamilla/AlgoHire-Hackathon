@@ -340,7 +340,7 @@ function ReviewActions({ batch: b, onDone, setFlash }: { batch: Batch; onDone: (
     setFlash(null);
     try {
       const res = await api<{ batch: { status: string } }>(`/batches/${b.id}/decisions`, { json: open === 'APPROVE' ? { type: open } : { type: open, reason: reason.trim() } });
-      setFlash({ tone: 'success', text: `Recorded ${humanize(open)}. Batch is now ${STATUS_LABEL[res.batch.status] ?? res.batch.status}.` });
+      setFlash({ tone: 'success', text: `Recorded ${humanize(open)}. The status above updates live.` });
       onDone();
     } catch (err) {
       setFlash({ tone: 'danger', text: err instanceof ApiError ? `${err.code}: ${err.message}` : errorText(err) });

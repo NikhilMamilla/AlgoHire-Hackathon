@@ -14,7 +14,7 @@ type Found = {
   issuedAt: string;
   revokedAt?: string;
 };
-type Result = { kind: 'found'; data: Found } | { kind: 'invalid'; certNo: string } | { kind: 'error'; message: string } | null;
+type Result = { kind: 'found'; data: Found; checkedAt: Date } | { kind: 'invalid'; certNo: string } | { kind: 'error'; message: string } | null;
 
 /** Public page (the QR code lands here). No login, and always fresh from the API. */
 export default function Verify() {
@@ -37,7 +37,7 @@ export default function Verify() {
       if (res.status === 404) setResult({ kind: 'invalid', certNo: no });
       else if (res.status === 429) setResult({ kind: 'error', message: 'Too many checks from your network. Please wait a minute and try again.' });
       else if (!res.ok) setResult({ kind: 'error', message: 'That does not look like a certificate number. It has the form CF-XXXXXXXXXX.' });
-      else setResult({ kind: 'found', data: (await res.json()) as Found });
+      else setResult({ kind: 'found', data: (await res.json()) as Found, checkedAt: new Date() });
     } catch {
       setResult({ kind: 'error', message: 'Could not reach the verification service. Check your connection and try again.' });
     } finally {
@@ -63,7 +63,7 @@ export default function Verify() {
     <div className="public">
       <header className="public-head">
         <span className="brand brand-dark">CertiFlow</span>
-        <span className="muted">Certificate verification</span>
+        <span className="muted">Certificate verification · Pragati Skills Mission</span>
       </header>
       <main className="public-main">
         <h1>Verify a certificate</h1>
@@ -91,28 +91,16 @@ export default function Verify() {
             Checking…
           </div>
         )}
-        {result?.kind === 'found' && result.data.status === 'VALID' && (
-          <div className="result result-valid" role="status">
-            <div className="result-title">
-              <span className="result-icon" aria-hidden="true">
-                ✓
-              </span>
-              Valid certificate
-            </div>
-            <Details d={result.data} />
-          </div>
-        )}
-        {result?.kind === 'found' && result.data.status === 'REVOKED' && (
-          <div className="result result-revoked" role="alert">
-            <div className="result-title">
-              <span className="result-icon" aria-hidden="true">
-                ✕
-              </span>
-              This certificate has been revoked and is not valid
-            </div>
-            <p>Revoked on {fmtDate(result.data.revokedAt)}.</p>
-            <Details d={result.data} />
-          </div>
+        {result?.kind === 'found' && (
+          <Record
+            d={result.data}
+            checkedAt={result.checkedAt}
+            valid={result.data.status === 'VALID'}
+            title={result.data.status === 'VALID' ? 'Valid certificate' : 'This certificate has been revoked and is not valid'}
+            subtitle={
+              result.data.status === 'VALID' ? 'Issued by Pragati Skills Mission' : `Revoked on ${fmtDate(result.data.revokedAt)}. Do not accept it as proof of completion.`
+            }
+          />
         )}
         {result?.kind === 'invalid' && (
           <div className="result result-invalid" role="alert">
@@ -132,15 +120,35 @@ export default function Verify() {
   );
 }
 
+const fmtTime = (d: Date) => d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Kolkata' });
+
+function Record({ d, valid, title, subtitle, checkedAt }: { d: Found; valid: boolean; title: string; subtitle: string; checkedAt: Date }) {
+  return (
+    <article className={`result ${valid ? 'result-valid' : 'result-revoked'}`} role={valid ? 'status' : 'alert'}>
+      <header className="result-band">
+        <span className="result-icon" aria-hidden="true">
+          {valid ? '✓' : '✕'}
+        </span>
+        <div>
+          <div className="result-title">{title}</div>
+          <div className="result-sub">{subtitle}</div>
+        </div>
+      </header>
+      <div className="result-body">
+        <p className="result-name">{d.candidateName}</p>
+        <p className="result-course">
+          completed <strong>{d.courseName}</strong> at {d.centreName}
+        </p>
+        <Details d={d} />
+      </div>
+      <footer className="result-foot">Checked against the live registry · {fmtTime(checkedAt)} IST</footer>
+    </article>
+  );
+}
+
 function Details({ d }: { d: Found }) {
   return (
     <dl className="details">
-      <dt>Name</dt>
-      <dd>{d.candidateName}</dd>
-      <dt>Course</dt>
-      <dd>{d.courseName}</dd>
-      <dt>Centre</dt>
-      <dd>{d.centreName}</dd>
       <dt>Completed</dt>
       <dd>{fmtDate(d.completionDate)}</dd>
       <dt>Issued</dt>
