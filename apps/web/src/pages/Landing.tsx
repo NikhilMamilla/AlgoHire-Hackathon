@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import CardSwap, { Card, type CardSwapHandle } from '../components/CardSwap/CardSwap';
 import GooeyNav from '../components/GooeyNav/GooeyNav';
 import { useAuth } from '../App';
 
@@ -62,20 +63,44 @@ const STEPS = [
 ];
 
 const GUARANTEES = [
-  ['A bad spreadsheet saves nothing.', 'Atomic transaction: the CSV replaces the candidate list in one go, or not at all, with row-level errors.'],
-  ['Simultaneous approvals count once.', 'Row lock on the batch plus a unique (batch, stage, round, officer) constraint in Postgres.'],
-  ['One certificate and one message per candidate.', 'Idempotent jobs plus database constraints; the WhatsApp send carries an idempotency key, so a timeout can’t cause a duplicate.'],
-  ['Revoked means revoked, immediately.', 'Live status lookup on every verification; nothing is cached, and a revoked PDF is never served.'],
-  ['Every decision is traceable.', 'Append-only audit log written in the same transaction as the change; a database trigger rejects edits and deletes.'],
-  ['Stuck batches escalate on their own.', 'SLA job every 30 seconds flags a batch that waits too long in a review stage.'],
+  {
+    claim: 'A bad spreadsheet saves nothing.',
+    how: 'The CSV replaces the candidate list in one database transaction, or not at all. Every bad row is reported with its row number.',
+    test: 'invalid CSV reports row-level errors and saves nothing',
+    icon: 'M5 3h10l4 4v14H5z M15 3v4h4 M9 13l6 6 M15 13l-6 6',
+  },
+  {
+    claim: 'Simultaneous approvals count once.',
+    how: 'A row lock on the batch serialises decisions, and a unique (batch, stage, round, officer) constraint makes a double vote impossible.',
+    test: 'concurrent approvals advance the batch exactly once',
+    icon: 'M8 11V7a4 4 0 0 1 8 0v4 M5 11h14v10H5z M12 15v2',
+  },
+  {
+    claim: 'One certificate and one message per candidate.',
+    how: 'Jobs are idempotent and the database enforces one certificate per candidate. Each WhatsApp send carries an idempotency key, so a timeout never sends twice.',
+    test: 'a timeout after the provider accepted does not send twice',
+    icon: 'M4 6h16v12H4z M4 7l8 6 8-6',
+  },
+  {
+    claim: 'Revoked means revoked, immediately.',
+    how: 'Every verification reads the live record. Nothing is cached, and a revoked certificate’s PDF is never served (410).',
+    test: 'revoked certificates fail verification immediately',
+    icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M5.6 5.6l12.8 12.8',
+  },
+  {
+    claim: 'Every decision is traceable.',
+    how: 'An audit row is written in the same transaction as each change. A Postgres trigger rejects any UPDATE or DELETE on the log.',
+    test: 'audit log rejects UPDATE and DELETE',
+    icon: 'M6 3h12v18H6z M9 7h6 M9 11h6 M9 15h4',
+  },
+  {
+    claim: 'Stuck batches escalate on their own.',
+    how: 'A job runs every 30 seconds and escalates, exactly once, any batch waiting longer than the SLA in a review stage.',
+    test: 'a stuck batch is escalated exactly once',
+    icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7v5l3 3',
+  },
 ];
 
-const PRIVACY = [
-  ['Minimal public data', 'Verification shows only status, name, course, centre and dates. No phone numbers, internal ids or the PDF itself.'],
-  ['Signed download links', 'The PDF link sent to a candidate carries an HMAC signature; staff downloads require the state office or the owning centre.'],
-  ['Server-side scoping', 'Every request is checked for role and district on the server. A batch outside your scope simply does not exist for you.'],
-  ['Unguessable, rate-limited lookups', 'Certificate numbers carry 50 random bits, and public endpoints are limited per IP to stop bulk scanning.'],
-];
 
 function Mark() {
   return (
@@ -364,24 +389,7 @@ export default function Landing() {
           </div>
         </Section>
 
-        <Section id="guarantees" title="What we guarantee" intro="These are the things that must never go wrong. Each is enforced by the database or the job design, not by hoping the UI is used correctly.">
-          <ul className="lp-guarantees">
-            {GUARANTEES.map(([claim, how]) => (
-              <li key={claim} className="lp-card lp-guarantee">
-                <strong>{claim}</strong>
-                <p>
-                  <span className="lp-how-label">How:</span> {how}
-                </p>
-                <span className="lp-tested">
-                  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                    <path d="M3.5 8.5l3 3 6-7" />
-                  </svg>
-                  Proven by automated tests
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
+        <Guarantees />
 
         <Section id="architecture" title="Architecture" tone="bg" intro="Five containers, one codebase. The API and the worker share one image and talk through Redis.">
           <div className="lp-arch">
@@ -420,16 +428,7 @@ export default function Landing() {
           </div>
         </Section>
 
-        <Section id="privacy" title="Privacy and security">
-          <ul className="lp-privacy">
-            {PRIVACY.map(([title, body]) => (
-              <li key={title}>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </li>
-            ))}
-          </ul>
-        </Section>
+        <PrivacySecurity />
 
         {stats !== 'error' && (
           <Section id="registry" title="Live registry" tone="bg">
@@ -564,5 +563,185 @@ function ArchitectureDiagram() {
         SLA + reconciler every 30s
       </text>
     </svg>
+  );
+}
+
+/** Guarantees: a synced numbered list (all the content, keyboard and screen-reader friendly) + a React Bits CardSwap stack. */
+function Guarantees() {
+  const swap = useRef<CardSwapHandle>(null);
+  const [front, setFront] = useState(0);
+  const bring = (i: number) => {
+    const steps = (i - front + GUARANTEES.length) % GUARANTEES.length;
+    for (let k = 0; k < steps; k++) window.setTimeout(() => swap.current?.next(), k * 140);
+  };
+  return (
+    <section id="guarantees" className="lp-section lp-guar" aria-labelledby="guarantees-title">
+      <div className="lp-wrap lp-guar-grid">
+        <div className="lp-guar-copy">
+          <h2 id="guarantees-title" className="lp-h2">
+            What we guarantee
+          </h2>
+          <p className="lp-intro">
+            Six things that must never go wrong. Each one is enforced by the database or the job design, and each has an automated test that fails the
+            build if it ever breaks.
+          </p>
+          <ol className="lp-guar-list">
+            {GUARANTEES.map((g, i) => (
+              <li key={g.claim}>
+                <button type="button" className="lp-guar-item" aria-pressed={i === front} onClick={() => bring(i)}>
+                  <span className="lp-guar-no">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="lp-guar-claim">{g.claim}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <p className="lp-guar-hint">Drag the front card, use the arrow keys, or pick a guarantee from the list.</p>
+        </div>
+        <div className="lp-guar-stage">
+          <CardSwap
+            ref={swap}
+            theme="dark"
+            width={440}
+            height={300}
+            cardDistance={46}
+            verticalDistance={54}
+            skewAmount={4}
+            delay={5200}
+            cardRadius={20}
+            onChange={setFront}
+            ariaLabel="Guarantees, one card at a time"
+          >
+            {GUARANTEES.map((g, i) => (
+              <Card key={g.claim} className="lp-gcard">
+                <div className="lp-gcard-top">
+                  <span className="lp-gcard-no">{String(i + 1).padStart(2, '0')}</span>
+                  <svg className="lp-gcard-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d={g.icon} />
+                  </svg>
+                </div>
+                <h3 className="lp-gcard-claim">{g.claim}</h3>
+                <p className="lp-gcard-how">
+                  <span>How</span> {g.how}
+                </p>
+                <p className="lp-gcard-test">
+                  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                  <span>
+                    Proven by test <code>{g.test}</code>
+                  </span>
+                </p>
+              </Card>
+            ))}
+          </CardSwap>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Privacy & security: four claims, each with its evidence (real fields, real link shape, real scope, real arithmetic). */
+function PrivacySecurity() {
+  return (
+    <section id="privacy" className="lp-section lp-surface lp-sec" aria-labelledby="privacy-title">
+      <div className="lp-wrap">
+        <h2 id="privacy-title" className="lp-h2">
+          Privacy and security
+        </h2>
+        <p className="lp-intro">
+          Public by design where it has to be, private everywhere else. Each claim below shows its evidence, taken from how the API actually behaves.
+        </p>
+        <div className="lp-sec-grid">
+          <article className="lp-sec-card lp-sec-wide">
+            <div className="lp-sec-text">
+              <h3>The public sees seven fields. Nothing else.</h3>
+              <p>Anyone can check a certificate without signing in, so the response is deliberately minimal: status, number, name, course, centre and two dates.</p>
+              <p className="lp-sec-never-label">Never returned</p>
+              <ul className="lp-sec-never">
+                <li>phone number</li>
+                <li>candidate ref</li>
+                <li>internal ids</li>
+                <li>revoke reason</li>
+                <li>the PDF</li>
+              </ul>
+            </div>
+            <pre className="lp-sec-code" aria-label="Example verification response">
+              <span className="c">{'// GET /api/public/verify/CF-7K2M9QX4TR'}</span>
+              {`
+{
+  "status": "VALID",
+  "certificateNo": "CF-7K2M9QX4TR",
+  "candidateName": "Priya Goud",
+  "courseName": "Retail Sales Associate",
+  "centreName": "Pragati Skill Centre",
+  "completionDate": "2026-02-02",
+  "issuedAt": "2026-11-21T06:44:00Z"
+}`}
+            </pre>
+          </article>
+
+          <article className="lp-sec-card">
+            <h3>Download links can’t be forged.</h3>
+            <p className="lp-sec-url" aria-label="Anatomy of a candidate download link">
+              <span>/api/certificates/</span>
+              <span className="u-id">CF-7K2M9QX4TR</span>
+              <span>/pdf?token=</span>
+              <span className="u-sig">Hq3V…k9Qw</span>
+            </p>
+            <p>
+              The token is an HMAC-SHA256 signature of the certificate number made with a server secret. Change one character and it is refused. Staff
+              downloads need the state office or the owning centre, and a revoked certificate returns 410.
+            </p>
+          </article>
+
+          <article className="lp-sec-card">
+            <h3>You only see your own batches.</h3>
+            <table className="lp-sec-scope">
+              <caption className="sr-only">What each role can see</caption>
+              <tbody>
+                <tr>
+                  <th scope="row">Training centre</th>
+                  <td>its own centre</td>
+                </tr>
+                <tr>
+                  <th scope="row">District officer</th>
+                  <td>its own district</td>
+                </tr>
+                <tr>
+                  <th scope="row">Quality team</th>
+                  <td>batches in quality review</td>
+                </tr>
+                <tr>
+                  <th scope="row">State office</th>
+                  <td>everything</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>Outside your scope a batch returns 404, so its existence isn’t revealed. Staff see candidate phone numbers masked as ******1234.</p>
+          </article>
+
+          <article className="lp-sec-card lp-sec-wide lp-sec-math">
+            <div>
+              <h3>Guessing a certificate number is hopeless.</h3>
+              <p>Numbers are CF- plus 10 random Crockford base32 characters: 50 random bits. Public lookups are rate-limited to 60 a minute per address.</p>
+            </div>
+            <dl className="lp-sec-figures">
+              <div>
+                <dt>Possible numbers</dt>
+                <dd>
+                  2<sup>50</sup> <small>≈ 1.13 quadrillion</small>
+                </dd>
+              </div>
+              <div>
+                <dt>To try them all at 60 a minute</dt>
+                <dd>
+                  ~36M <small>years</small>
+                </dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+      </div>
+    </section>
   );
 }

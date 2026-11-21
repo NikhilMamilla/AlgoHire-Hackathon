@@ -1,0 +1,730 @@
+/* Guarantees (CardSwap), Privacy & security (evidence bento) and the sign-in screen. Tokens + morph.css materials. */
+
+/* ================= What we guarantee ================= */
+.lp-guar {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--text-inverse);
+  background-color: #0f2350;
+  background-image:
+    radial-gradient(40rem 26rem at 0% 0%, rgba(47, 91, 181, 0.55), transparent 70%),
+    radial-gradient(34rem 24rem at 100% 100%, rgba(194, 86, 12, 0.35), transparent 70%),
+    radial-gradient(28rem 20rem at 70% 10%, rgba(124, 58, 237, 0.25), transparent 70%);
+}
+.lp-guar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('/textures/guilloche.jpg') center 45% / max(260%, 340vh) auto no-repeat;
+  mix-blend-mode: soft-light;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.lp-guar .lp-h2 {
+  color: var(--text-inverse);
+}
+.lp-guar .lp-intro {
+  color: var(--primary-100);
+}
+.lp-guar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--s-10);
+  align-items: center;
+}
+.lp-guar-list {
+  list-style: none;
+  margin: var(--s-6) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-1);
+}
+.lp-guar-item {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--primary-100);
+  font: inherit;
+  font-size: var(--fs-16);
+  text-align: left;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+.lp-guar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-inverse);
+}
+.lp-guar-item[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--text-inverse);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.lp-guar-item:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+.lp-guar-no {
+  flex: none;
+  font-family: var(--mono);
+  font-size: var(--fs-13);
+  color: #f5a463;
+  font-variant-numeric: tabular-nums;
+}
+.lp-guar-claim {
+  font-weight: 600;
+}
+.lp-guar-hint {
+  margin-top: var(--s-4);
+  font-size: var(--fs-13);
+  color: var(--primary-100);
+  opacity: 0.85;
+}
+.lp-guar-stage {
+  height: 480px;
+}
+.lp-guar-stage .card-swap:focus-visible .card-swap-slot[data-front] {
+  outline-color: #fff;
+}
+/* The guarantee card: a dark tile with a holographic edge and the test that proves it. */
+.lp-gcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-6) var(--s-6) var(--s-5);
+  background: linear-gradient(160deg, #22325c 0%, #172447 55%, #121c38 100%) !important;
+  color: var(--text-inverse) !important;
+}
+.lp-gcard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+}
+.lp-gcard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.lp-gcard-no {
+  font-family: var(--mono);
+  font-size: var(--fs-13);
+  color: #f5a463;
+  letter-spacing: 0.08em;
+}
+.lp-gcard-icon {
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  fill: none;
+  stroke: #c7d2fe;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* !important: beats the global h3 colour and the CardSwap tile ink regardless of stylesheet order or cache. */
+.lp-guar .lp-gcard .lp-gcard-claim,
+.card-swap .lp-gcard h3 {
+  color: #fff !important;
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: #fff;
+}
+.lp-gcard-how {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: 1.55;
+  color: #cdd6ee;
+}
+.lp-gcard-how span {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: #f5a463;
+}
+.lp-gcard-test {
+  margin: auto 0 0;
+  display: flex;
+  gap: var(--s-2);
+  align-items: flex-start;
+  font-size: var(--fs-12);
+  color: #a7f3c4;
+}
+.lp-gcard-test svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lp-gcard-test code {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #e2e8f0;
+}
+
+/* ================= Privacy and security ================= */
+.lp-sec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5);
+  margin-top: var(--s-8);
+}
+.lp-sec-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--paper-shadow);
+}
+.lp-sec-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.lp-sec-card p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-14);
+  line-height: 1.6;
+}
+.lp-sec-wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: var(--s-8);
+  align-items: center;
+}
+.lp-sec-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.lp-sec-never-label {
+  font-size: var(--fs-13) !important;
+  font-weight: 600;
+  color: var(--text) !important;
+  margin-top: var(--s-2) !important;
+}
+.lp-sec-never {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.lp-sec-never li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.lp-sec-code {
+  margin: 0;
+  padding: var(--s-5) var(--s-6);
+  border-radius: var(--radius);
+  background: #0f1b36;
+  color: #dbe4ff;
+  font-family: var(--mono);
+  font-size: var(--fs-13);
+  line-height: 1.7;
+  overflow-x: auto;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 36px -22px rgba(14, 23, 38, 0.6);
+  position: relative;
+}
+.lp-sec-code::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--holo);
+  background-size: 300% 100%;
+  animation: holo-shift 7s linear infinite;
+}
+.lp-sec-code .c {
+  color: #8fa3cf;
+}
+.lp-sec-url {
+  font-family: var(--mono);
+  font-size: var(--fs-13) !important;
+  line-height: 1.9 !important;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow-wrap: anywhere;
+  color: var(--text-3) !important;
+}
+.lp-sec-url .u-id {
+  color: var(--primary);
+  font-weight: 600;
+}
+.lp-sec-url .u-sig {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--accent-50);
+  color: var(--accent);
+  font-weight: 600;
+}
+.lp-sec-scope {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-14);
+}
+.lp-sec-scope th,
+.lp-sec-scope td {
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.lp-sec-scope tr:last-child th,
+.lp-sec-scope tr:last-child td {
+  border-bottom: none;
+}
+.lp-sec-scope th {
+  font-weight: 600;
+  width: 48%;
+}
+.lp-sec-scope td {
+  color: var(--text-2);
+}
+.lp-sec-math {
+  background: linear-gradient(135deg, var(--primary-50), #fff 60%);
+}
+.lp-sec-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin: 0;
+}
+.lp-sec-figures > div {
+  padding: var(--s-5);
+  border-radius: var(--radius);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.lp-sec-figures dt {
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+.lp-sec-figures dd {
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-38);
+  font-weight: 650;
+  line-height: 1.1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.lp-sec-figures small {
+  display: block;
+  font-family: var(--font);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* ================= Sign-in: three tiers by hierarchy, no outer box, one screen ================= */
+.signin {
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.signin-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  height: var(--topbar-h);
+  padding: 0 var(--s-6);
+}
+.signin-links {
+  display: flex;
+  gap: var(--s-5);
+  font-size: var(--fs-14);
+  font-weight: 550;
+}
+.signin-links a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+.signin-links a:hover {
+  color: var(--primary);
+}
+.signin-body {
+  flex: 1;
+  min-height: 0;
+  width: min(1120px, calc(100% - 2 * var(--s-6)));
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s-5);
+  padding-bottom: var(--s-6);
+}
+.signin-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: var(--s-6);
+  align-items: end;
+}
+.signin-head h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-38);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 var(--s-2);
+}
+.signin-sub {
+  margin: 0;
+  color: var(--text-2);
+}
+.signin-note {
+  margin: 0;
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius);
+  background: rgba(238, 244, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid #d6e2ff;
+  color: var(--info);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+.signin-note svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.signin-current {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+
+/* The hierarchy: one row per tier, joined by a vertical rail with one dot per tier. */
+.signin-tiers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-4);
+  position: relative;
+}
+.signin-tiers::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: 18px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--success), var(--primary) 50%, var(--accent));
+  opacity: 0.45;
+}
+.signin-tier {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: center;
+}
+.signin-tier-label {
+  position: relative;
+  padding-left: var(--s-8);
+}
+.signin-tier-dot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border), 0 4px 10px -4px rgba(14, 23, 38, 0.4);
+}
+.tier-state .signin-tier-dot {
+  background: var(--success);
+}
+.tier-review .signin-tier-dot {
+  background: var(--primary);
+}
+.tier-centre .signin-tier-dot {
+  background: var(--accent);
+}
+.signin-tier-level {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.signin-tier-label h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.signin-tier-label p {
+  margin: 2px 0 0;
+  font-size: var(--fs-13);
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.signin-tier-groups {
+  display: flex;
+  flex-wrap: nowrap; /* one line per tier: district officers and the quality team side by side */
+  gap: var(--s-5);
+  align-items: flex-end;
+}
+.signin-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.signin-group-label {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text-3);
+}
+.signin-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+.signin .user-card {
+  width: 188px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.76);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 24px -16px rgba(14, 23, 38, 0.4);
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
+}
+.signin .user-card:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 1px 0 #fff inset, 0 18px 30px -16px rgba(27, 58, 122, 0.45);
+}
+.signin .user-card:focus-visible {
+  box-shadow: var(--focus), 0 12px 24px -16px rgba(14, 23, 38, 0.4);
+}
+.signin .user-card:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.signin .avatar {
+  width: 40px;
+  height: 40px;
+  font-size: var(--fs-14);
+  box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.8), inset -2px -3px 6px rgba(14, 23, 38, 0.08), 0 6px 12px -6px rgba(14, 23, 38, 0.3);
+}
+.signin .user-card-text {
+  flex: 1;
+  min-width: 0;
+}
+.signin .user-card-name {
+  font-size: var(--fs-16);
+  line-height: 1.25;
+}
+.signin-scope {
+  font-size: var(--fs-13);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.signin .user-card-action {
+  color: var(--primary);
+}
+.signin-skel {
+  width: 188px;
+  height: 64px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ================= Responsive ================= */
+@media (max-width: 1100px) {
+  .lp-guar-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp-guar-stage {
+    height: 420px;
+  }
+  .lp-sec-wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .signin-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-3);
+  }
+  .signin-tier {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: var(--s-4);
+  }
+  .signin-tier-groups {
+    flex-wrap: wrap;
+  }
+  .signin .user-card,
+  .signin-skel {
+    width: 168px;
+  }
+}
+@media (max-width: 760px) {
+  .lp-sec-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp-guar-stage {
+    height: 340px;
+  }
+  .signin-top {
+    padding: 0 var(--s-4);
+  }
+  .signin-links a:last-child {
+    display: none;
+  }
+  .signin-body {
+    width: calc(100% - 2 * var(--s-4));
+    justify-content: flex-start;
+    gap: var(--s-3);
+    padding-top: var(--s-2);
+  }
+  .signin-head h1 {
+    font-size: var(--fs-24);
+    margin: 0;
+  }
+  .signin-sub,
+  .signin-tier-label p,
+  .signin-group-label {
+    display: none;
+  }
+  .signin-tiers {
+    gap: var(--s-3);
+  }
+  .signin-tiers::before {
+    top: 10px;
+  }
+  .signin-tier {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+  .signin-tier-label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-2);
+    padding-left: var(--s-6);
+  }
+  .signin-tier-dot {
+    top: 3px;
+    width: 14px;
+    height: 14px;
+  }
+  .signin-tier-label h2 {
+    font-size: var(--fs-16);
+  }
+  .signin-tier-groups,
+  .signin-group,
+  .signin-group ul {
+    display: grid;
+    gap: var(--s-2);
+    width: 100%;
+  }
+  .signin-tier-groups {
+    padding-left: var(--s-6);
+  }
+  .signin .user-card,
+  .signin-skel {
+    width: 100%;
+    min-height: 50px;
+    padding: var(--s-2) var(--s-3);
+    border-radius: 12px;
+  }
+  .signin .avatar {
+    width: 32px;
+    height: 32px;
+  }
+  .signin-scope {
+    display: none;
+  }
+}
+/* Short desktop screens: tighten so every tier still fits without scrolling. */
+@media (min-width: 761px) and (max-height: 760px) {
+  .signin-body {
+    gap: var(--s-3);
+  }
+  .signin-head h1 {
+    font-size: var(--fs-30);
+  }
+  .signin-tiers {
+    gap: var(--s-3);
+  }
+  .signin .user-card {
+    min-height: 54px;
+    padding: var(--s-2) var(--s-3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-gcard::before,
+  .lp-sec-code::before {
+    animation: none;
+  }
+  .lp-guar-item,
+  .signin .user-card {
+    transition: none;
+  }
+}

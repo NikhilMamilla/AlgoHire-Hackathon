@@ -290,158 +290,10 @@
   padding-top: calc(var(--s-5) + 4px);
 }
 
-/* ---------- Sign-in: fits one screen, glass on the mesh ---------- */
-.login-page.mesh-bg {
-  height: 100dvh;
-  min-height: 0;
-  padding: var(--s-6);
-  grid-template-columns: minmax(0, 1fr);
-  place-items: center;
-  overflow: hidden;
-}
-.login-split {
-  width: min(1040px, 100%);
-  max-height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
-  gap: var(--s-6);
-  align-items: stretch;
-}
-.login-aside {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--s-6);
-  padding: var(--s-8);
-  border-radius: var(--radius-lg);
-  background: rgba(27, 58, 122, 0.88);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: var(--glass-shadow);
-  color: var(--text-inverse);
-  position: relative;
-  overflow: hidden;
-}
-.login-aside::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 5px;
-  background: var(--holo);
-  background-size: 300% 100%;
-  animation: holo-shift 7s linear infinite;
-}
-.login-aside .brand {
-  color: var(--text-inverse);
-}
-.login-aside h2 {
-  font-family: var(--font-display);
-  font-size: var(--fs-30);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--text-inverse);
-  margin: 0 0 var(--s-3);
-  text-wrap: balance;
-}
-.login-aside p,
-.login-aside li {
-  color: var(--primary-100);
-  font-size: var(--fs-14);
-  line-height: 1.55;
-}
-.login-aside ul {
-  margin: 0;
-  padding-left: var(--s-5);
-  display: grid;
-  gap: var(--s-2);
-}
-.login-aside a {
-  color: var(--text-inverse);
-}
-.login-split .signin-card {
-  width: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  background: var(--glass-bg-strong);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  padding: var(--s-6) var(--s-6) var(--s-4);
-}
-.login-split .signin-card h1 {
-  font-size: var(--fs-24);
-  margin: var(--s-3) 0 var(--s-2);
-}
-.login-split .signin-note {
-  margin-bottom: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  font-size: var(--fs-13);
-}
-.login-split .signin-group h2 {
-  margin: var(--s-3) 0 var(--s-1);
-}
-.login-split .signin-group ul {
-  background: rgba(255, 255, 255, 0.7);
-}
-.login-split .signin-group .user-card {
-  min-height: 48px;
-  padding: 6px var(--s-3);
-  background: transparent;
-}
-.login-split .signin-group .user-card:hover:not(:disabled) {
-  background: var(--primary-50);
-}
-.login-split .avatar {
-  width: 32px;
-  height: 32px;
-}
-.login-split .signin-foot {
-  margin-top: var(--s-3);
-}
-@media (max-width: 900px) {
-  .login-split {
-    grid-template-columns: minmax(0, 1fr);
-    width: min(480px, 100%);
-  }
-  .login-aside {
-    display: none;
-  }
-}
-@media (max-width: 560px) {
-  .login-page.mesh-bg {
-    padding: var(--s-3);
-  }
-  .login-split .signin-card {
-    padding: var(--s-4) var(--s-4) var(--s-3);
-  }
-}
-/* Short screens: tighten so the whole sign-in still fits without scrolling. */
-@media (max-height: 760px) {
-  .login-split .signin-card h1 {
-    margin-top: var(--s-2);
-    font-size: var(--fs-20);
-  }
-  .login-split .signin-group h2 {
-    margin-top: var(--s-2);
-  }
-  .login-split .signin-group .user-card {
-    min-height: 42px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-  }
-  .login-split .avatar {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .holo-strip::before,
   .lp-example-card::before,
-  .result-valid::before,
-  .login-aside::after {
+  .result-valid::before {
     animation: none;
   }
   .lp-card,
@@ -458,8 +310,7 @@
     background: var(--surface);
   }
   .result,
-  .lp-example-card,
-  .login-split .signin-card {
+  .lp-example-card {
     background: var(--surface);
   }
 }

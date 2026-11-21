@@ -11,6 +11,7 @@ import './styles.css';
 import './polish.css';
 import './styles/landing.css';
 import './styles/morph.css';
+import './styles/sections.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
