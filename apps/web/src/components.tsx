@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { BatchStatus, Role } from './api';
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -32,6 +32,11 @@ export const REVIEW_STATUS: Partial<Record<Role, BatchStatus>> = {
   STATE: 'STATE_REVIEW',
 };
 
+/**
+ * One colour per status, used by every badge in the app (styles.css documents the same map):
+ * neutral: Draft, Cancelled · info: the three review stages · success: Approved, Issued, Valid, Sent
+ * warn: Returned, Pending · danger: Rejected, Revoked, Failed (and the Escalated badge).
+ */
 const TONE: Record<string, string> = {
   DRAFT: 'neutral',
   DISTRICT_REVIEW: 'info',
@@ -98,15 +103,42 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
   );
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Dialog: Esc closes, Tab is trapped inside, and focus returns to the element that opened it. */
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const trigger = document.activeElement as HTMLElement | null;
+    const box = ref.current;
+    if (box && !box.contains(document.activeElement)) (box.querySelector<HTMLElement>(FOCUSABLE) ?? box).focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return closeRef.current();
+      if (e.key !== 'Tab' || !box) return;
+      const items = [...box.querySelectorAll<HTMLElement>(FOCUSABLE)];
+      if (!items.length) return;
+      const [first, last] = [items[0], items[items.length - 1]];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      trigger?.focus?.();
+    };
+  }, []);
+
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div ref={ref} tabIndex={-1} className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <h2 id="modal-title">{title}</h2>
         {children}
       </div>
@@ -138,8 +170,40 @@ export function since(iso: string | null | undefined, now: number) {
 export const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : '—';
 
-export const fmtDateTime = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : '—';
+/** One format everywhere: "21 Nov 2026, 11:22 IST". */
+export const fmtDateTime = (iso: string | null | undefined) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Kolkata' });
+  return `${fmtDate(iso)}, ${time} IST`;
+};
+
+/** The CertiFlow mark: a document with a check, in brand navy. Decorative; pair it with the wordmark. */
+export function Mark({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <rect x="2" y="2" width="28" height="28" rx="7" fill="var(--primary)" />
+      <path d="M10 9h8l4 4v10a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1z" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="m12.5 17.5 2.5 2.5 4.5-5" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Small line icons (aria-hidden); text labels always sit next to them. */
+export function Icon({ name, size = 16 }: { name: 'check' | 'cross' | 'chevron' | 'menu' | 'copy'; size?: number }) {
+  const paths: Record<string, string> = {
+    check: 'M5 12.5l4.5 4.5L19 7.5',
+    cross: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
+    chevron: 'M9.5 6l6 6-6 6',
+    menu: 'M4 7h16M4 12h16M4 17h16',
+    copy: 'M9 9h10v10H9zM5 15V5h10',
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={paths[name]} />
+    </svg>
+  );
+}
 
 export const humanize = (code: string) => (code.charAt(0) + code.slice(1).toLowerCase().replace(/_/g, ' ')).replace(/^Csv\b/, 'CSV');
 
