@@ -1,10 +1,12 @@
 // Wires the plain job functions in src/jobs/* to BullMQ. No business logic lives here.
 import { Worker, type Processor } from 'bullmq';
 import './config.js';
+import { deliverCertificate, markDeliveryFailed } from './jobs/deliverCertificate.js';
 import { issueCertificates } from './jobs/issueCertificates.js';
 import { reconcile } from './jobs/reconcile.js';
 import { createRedis, logger, prisma } from './lib.js';
 import { closeQueues, queue, QUEUES, type QueueName } from './queues.js';
+import { SimulatedWhatsAppProvider } from './whatsapp/provider.js';
 
 const workers: Worker[] = [];
 function start(name: QueueName, processor: Processor, concurrency = 1) {
@@ -16,6 +18,13 @@ function start(name: QueueName, processor: Processor, concurrency = 1) {
 }
 
 start(QUEUES.certificates, (job) => issueCertificates(job.data.batchId, { jobAttempt: job.attemptsMade + 1 }));
+const provider = new SimulatedWhatsAppProvider();
+start(QUEUES.delivery, (job) => deliverCertificate(job.data.deliveryId, provider), 5).on('failed', (job, err) => {
+  // Out of retries: mark FAILED. The certificate itself stays VALID; POST /api/deliveries/retry-failed re-queues.
+  if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+    markDeliveryFailed(job.data.deliveryId, err.message).catch((e) => logger.error({ err: e }, 'markDeliveryFailed'));
+  }
+});
 start(QUEUES.maintenance, async () => logger.info(await reconcile(), 'reconcile'));
 await queue('maintenance').upsertJobScheduler('reconcile-every-30s', { every: 30_000 }, { name: 'reconcile' });
 
