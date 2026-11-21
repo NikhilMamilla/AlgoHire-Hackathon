@@ -40,6 +40,8 @@ How the brief was interpreted. Where the brief left a choice open, the choice an
 
 ## 2. Architecture
 
+![CertiFlow architecture: nginx, Express API, PostgreSQL, Redis/BullMQ and the worker, with the numbered flow from CSV upload to public verification](apps/web/public/architecture.webp)
+
 ```
 browser ──► nginx :8080 ──► api (Express, :4000, not published) ──► PostgreSQL 16
    ▲          (SPA + /api proxy, SSE)        │  ▲                       ▲

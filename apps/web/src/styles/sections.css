@@ -728,3 +728,142 @@
     transition: none;
   }
 }
+
+/* ================= Architecture: the diagram in a glass frame + four notes ================= */
+.lp-arch-figure {
+  margin: var(--s-8) 0 0;
+}
+.lp-arch-zoom {
+  position: relative;
+  display: block;
+  padding: var(--s-3);
+  border-radius: 20px;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.lp-arch-zoom img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: #f6f9fb;
+}
+.lp-arch-open {
+  position: absolute;
+  right: var(--s-6);
+  bottom: var(--s-6);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--text-inverse);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+}
+.lp-arch-open svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lp-arch-zoom:hover,
+.lp-arch-zoom:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow), 0 30px 60px -30px rgba(27, 58, 122, 0.45);
+}
+.lp-arch-zoom:hover .lp-arch-open,
+.lp-arch-zoom:focus-visible .lp-arch-open {
+  opacity: 1;
+  transform: none;
+}
+.lp-arch-figure figcaption {
+  margin-top: var(--s-3);
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+.lp-arch-notes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin-top: var(--s-8);
+}
+.lp-arch-note {
+  padding: var(--s-5);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.lp-arch-note h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--s-2);
+}
+.lp-arch-note p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.lp-arch-real {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.lp-arch-real h3 {
+  color: var(--text-inverse);
+}
+.lp-arch-real p {
+  color: var(--primary-100);
+}
+/* specific enough to beat the landing link colour (navy on navy) */
+.lp .lp-arch-note.lp-arch-real a {
+  color: var(--text-inverse);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+@media (max-width: 1100px) {
+  .lp-arch-notes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .lp-arch-zoom {
+    padding: var(--s-2);
+    border-radius: 14px;
+  }
+  .lp-arch-zoom img {
+    border-radius: 8px;
+  }
+  .lp-arch-open {
+    opacity: 1;
+    transform: none;
+    right: var(--s-3);
+    bottom: var(--s-3);
+  }
+  .lp-arch-notes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-arch-zoom,
+  .lp-arch-open {
+    transition: none;
+  }
+}
