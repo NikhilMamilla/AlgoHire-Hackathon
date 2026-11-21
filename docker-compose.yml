@@ -6,6 +6,9 @@ x-api-env: &api-env
   QUALITY_THRESHOLD: ${QUALITY_THRESHOLD:-50}
   SLA_MINUTES: ${SLA_MINUTES:-2}
   PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+  DOWNLOAD_TOKEN_SECRET: ${DOWNLOAD_TOKEN_SECRET:-dev-download-secret-change-me}
+  WHATSAPP_MODE: ${WHATSAPP_MODE:-flaky}
+  PUBLIC_RATE_LIMIT: ${PUBLIC_RATE_LIMIT:-60}
   PORT: 4000
 
 services:
@@ -29,6 +32,10 @@ services:
 
   redis:
     image: redis:7-alpine
+    # AOF persistence: queued BullMQ jobs survive a Redis restart.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
     ports:
       - "6379:6379"
     healthcheck:
@@ -78,3 +85,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

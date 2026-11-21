@@ -46,6 +46,7 @@ enum DeliveryStatus {
   PENDING
   SENT
   FAILED
+  CANCELLED
 }
 
 model District {
@@ -169,4 +170,15 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId])
+}
+
+/// The simulated WhatsApp provider's own "sent messages" store. A unique idempotencyKey makes a
+/// retried send return the existing message instead of sending a second one.
+model OutboundMessage {
+  id                String   @id @default(cuid())
+  idempotencyKey    String   @unique
+  to                String
+  body              String
+  providerMessageId String
+  createdAt         DateTime @default(now())
 }
