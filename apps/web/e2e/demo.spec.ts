@@ -271,6 +271,27 @@ test('staff screens never scroll sideways (tabs wrap, tables fit)', async ({ bro
   }
 });
 
+test('landing sections render (README gallery screenshots)', async ({ browser }) => {
+  const page = await newPage(browser, 'landing-gallery');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Live registry' })).toBeVisible();
+  // Hide the sticky header so it doesn't overlap the section captures.
+  await page.addStyleTag({ content: '.lp-head { display: none !important; }' });
+  for (const id of ['problem', 'who', 'how', 'guarantees', 'architecture', 'privacy']) {
+    const section = page.locator(`#${id}`);
+    await section.scrollIntoViewIfNeeded();
+    if (id === 'architecture') {
+      await page.waitForFunction(() => {
+        const img = document.querySelector<HTMLImageElement>('#architecture img');
+        return !!img && img.complete && img.naturalWidth > 0;
+      });
+    }
+    if (id === 'guarantees') await page.waitForTimeout(1200); // let the CardSwap intro settle
+    await section.screenshot({ path: path.join(here, 'screenshots', `landing-${id}.png`), animations: 'disabled' });
+  }
+});
+
 test('architecture diagram opens full screen in the page and closes with ✕ or Esc', async ({ browser }) => {
   const page = await newPage(browser, 'arch');
   await page.goto('/');
