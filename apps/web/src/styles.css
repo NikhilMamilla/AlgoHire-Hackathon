@@ -72,7 +72,7 @@ a:hover {
 }
 .truncate {
   display: block;
-  max-width: 32ch;
+  max-width: 26ch; /* keeps the batches table within the content width at 1280px */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -502,34 +502,46 @@ a:hover {
 }
 
 /* ---------- Tabs ---------- */
+/* Pill tabs that wrap onto a second line instead of scrolling sideways (no horizontal scrollbar at any width). */
 .tabs {
   display: flex;
-  gap: var(--s-1);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: var(--s-4);
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-5);
 }
 .tab {
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: var(--fs-14);
   font-weight: 500;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  min-height: var(--control-h);
-  padding: 0 var(--s-3);
-  color: var(--text-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  min-height: var(--control-h-dense);
+  padding: 0 var(--s-2) 0 var(--s-4);
+  color: var(--text-2);
   cursor: pointer;
   white-space: nowrap;
-  transition: color 150ms, border-color 150ms;
+  transition: color 150ms, border-color 150ms, background 150ms;
 }
 .tab:hover {
   color: var(--text);
+  border-color: var(--border-strong);
 }
 .tab-active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-inverse);
   font-weight: 600;
+}
+.tab-active:hover {
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+.tab-active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-inverse);
 }
 .tab-count {
   margin-left: 6px;
@@ -568,6 +580,14 @@ a:hover {
   height: 44px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+}
+/* Laptop widths: slightly tighter cells so the widest table (batches, with two status badges) fits without a scrollbar. */
+@media (max-width: 1400px) {
+  .table th,
+  .table td {
+    padding-left: var(--s-3);
+    padding-right: var(--s-3);
+  }
 }
 .table th {
   background: var(--surface-2);
