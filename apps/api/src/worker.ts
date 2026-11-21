@@ -1,4 +1,5 @@
 // Wires the plain job functions in src/jobs/* to BullMQ. No business logic lives here.
+import { writeFile } from 'node:fs/promises';
 import { Worker, type Processor } from 'bullmq';
 import './config.js';
 import { deliverCertificate, markDeliveryFailed } from './jobs/deliverCertificate.js';
@@ -32,6 +33,11 @@ start(QUEUES.maintenance, async (job) => {
 });
 await queue('maintenance').upsertJobScheduler('reconcile-every-30s', { every: 30_000 }, { name: 'reconcile' });
 await queue('maintenance').upsertJobScheduler('escalate-every-30s', { every: 30_000 }, { name: 'escalate' });
+
+// Liveness heartbeat for the compose healthcheck (the worker has no HTTP port).
+const touch = () => writeFile('/tmp/worker-alive', String(Date.now())).catch(() => {});
+void touch();
+setInterval(touch, 10_000).unref();
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'worker shutting down');

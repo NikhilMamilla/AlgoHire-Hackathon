@@ -74,6 +74,13 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      # worker.ts touches this file every 10s; stale = event loop stuck or process wedged.
+      test: ["CMD", "node", "-e", "process.exit(Date.now() - require('fs').statSync('/tmp/worker-alive').mtimeMs < 30000 ? 0 : 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
 
   web:
     build:
@@ -84,6 +91,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      # Proves nginx is up AND its /api proxy reaches the api service.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
 volumes:
   pgdata:

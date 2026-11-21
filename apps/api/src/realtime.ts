@@ -84,6 +84,7 @@ function ensureSubscribed() {
         .catch((err) => logger.warn({ err }, 'SSE filter failed'));
     }
   });
+  return subscribed;
 }
 
 export const HEARTBEAT_MS = 20_000;

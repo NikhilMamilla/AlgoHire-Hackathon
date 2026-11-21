@@ -8,6 +8,8 @@ COPY apps/web/package.json apps/web/
 # dev deps kept: tsx runs the TS entrypoints and `npm test` runs in this image.
 RUN npm ci -w apps/api
 COPY apps/api apps/api
+# Sample CSVs: the test suite uploads them (`docker compose run --rm api npm test`).
+COPY samples samples
 WORKDIR /app/apps/api
 RUN npx prisma generate
 EXPOSE 4000
