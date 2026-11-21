@@ -254,6 +254,26 @@ test('log out from the dashboard ends the session', async ({ browser }) => {
   await expect(farah).toHaveURL(/\/login$/);
 });
 
+test('mobile landing: hamburger menu replaces the section nav', async ({ browser }) => {
+  const page = await newPage(browser, 'mobile-nav');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.getByRole('navigation', { name: 'Page sections' })).toBeHidden();
+  const menuBtn = page.getByRole('button', { name: 'Open menu' });
+  await expect(menuBtn).toBeVisible();
+  await menuBtn.click();
+  const menu = page.getByRole('navigation', { name: 'Site menu' });
+  await expect(menu).toBeVisible();
+  await shot(page, 'landing-mobile-menu', false);
+  await menu.getByRole('link', { name: 'Guarantees' }).click();
+  await expect(menu).toBeHidden();
+  await expect(page.locator('#guarantees')).toBeInViewport();
+  await page.getByRole('button', { name: 'Open menu' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('navigation', { name: 'Site menu' })).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('landing nav: clicking a section moves the active pill', async ({ browser }) => {
   const page = await newPage(browser, 'nav');
   await page.goto('/');
