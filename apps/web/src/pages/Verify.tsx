@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Icon, Mark, fmtDate } from '../components';
+import { Icon, Mark, fmtDate, fmtDateTime } from '../components';
 
 const CERT_NO = /^CF-[0-9A-HJKMNP-TV-Z]{10}$/;
 
@@ -66,7 +66,7 @@ export default function Verify() {
           <Mark size={24} />
           CertiFlow
         </Link>
-        <span className="muted">Certificate verification · Pragati Skills Mission</span>
+        <span className="muted public-head-note">Certificate verification · Pragati Skills Mission</span>
       </header>
       <main className="public-main" id="main" tabIndex={-1}>
         <h1>Verify a certificate</h1>
@@ -123,7 +123,6 @@ export default function Verify() {
   );
 }
 
-const fmtTime = (d: Date) => d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Kolkata' });
 
 function Record({ d, valid, title, subtitle, checkedAt }: { d: Found; valid: boolean; title: string; subtitle: string; checkedAt: Date }) {
   return (
@@ -144,7 +143,7 @@ function Record({ d, valid, title, subtitle, checkedAt }: { d: Found; valid: boo
         </p>
         <Details d={d} />
       </div>
-      <footer className="result-foot">Checked against the live registry · {fmtTime(checkedAt)} IST</footer>
+      <footer className="result-foot">Checked against the live registry · {fmtDateTime(checkedAt.toISOString())}</footer>
     </article>
   );
 }
