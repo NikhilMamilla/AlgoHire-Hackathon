@@ -4,7 +4,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import { audit } from '../audit.js';
 import { currentUser, requireAuth, requireRole } from '../auth.js';
-import { EDITABLE, lockBatch, submitBatch } from '../batchWorkflow.js';
+import { decide, EDITABLE, lockBatch, submitBatch } from '../batchWorkflow.js';
 import { parseCandidatesCsv } from '../csv.js';
 import { HttpError } from '../errors.js';
 import { ah, prisma } from '../lib.js';
@@ -112,5 +112,21 @@ batchesRouter.post(
   requireRole('CENTRE'),
   ah(async (req, res) => {
     res.json({ batch: await submitBatch(currentUser(req), req.params.id) });
+  }),
+);
+
+const decisionBody = z
+  .object({ type: z.enum(['APPROVE', 'REJECT', 'RETURN']), reason: z.string().trim().max(1000).optional() })
+  .refine((d) => d.type === 'APPROVE' || (d.reason?.length ?? 0) >= 5, {
+    message: 'reason (at least 5 characters) is required to reject or return',
+    path: ['reason'],
+  });
+
+batchesRouter.post(
+  '/batches/:id/decisions',
+  requireRole('DISTRICT_OFFICER', 'QUALITY', 'STATE'),
+  ah(async (req, res) => {
+    const { type, reason } = decisionBody.parse(req.body);
+    res.status(201).json(await decide(currentUser(req), req.params.id, type, reason));
   }),
 );
