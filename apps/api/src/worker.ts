@@ -1,6 +1,7 @@
 // Wires the plain job functions in src/jobs/* to BullMQ. No business logic lives here.
 import { Worker, type Processor } from 'bullmq';
 import './config.js';
+import { issueCertificates } from './jobs/issueCertificates.js';
 import { reconcile } from './jobs/reconcile.js';
 import { createRedis, logger, prisma } from './lib.js';
 import { closeQueues, queue, QUEUES, type QueueName } from './queues.js';
@@ -14,6 +15,7 @@ function start(name: QueueName, processor: Processor, concurrency = 1) {
   return w;
 }
 
+start(QUEUES.certificates, (job) => issueCertificates(job.data.batchId, { jobAttempt: job.attemptsMade + 1 }));
 start(QUEUES.maintenance, async () => logger.info(await reconcile(), 'reconcile'));
 await queue('maintenance').upsertJobScheduler('reconcile-every-30s', { every: 30_000 }, { name: 'reconcile' });
 

@@ -10,7 +10,13 @@ export type AuditAction =
   | 'BATCH_STAGE_ADVANCED'
   | 'BATCH_RETURNED'
   | 'BATCH_REJECTED'
-  | 'BATCH_APPROVED';
+  | 'BATCH_APPROVED'
+  | 'CERTIFICATES_ISSUED'
+  | 'CERTIFICATE_DELIVERED'
+  | 'DELIVERY_FAILED'
+  | 'DELIVERY_CANCELLED'
+  | 'DELIVERIES_REQUEUED'
+  | 'CERTIFICATE_REVOKED';
 
 /**
  * Pass the SAME transaction client as the business change, so the change and its
