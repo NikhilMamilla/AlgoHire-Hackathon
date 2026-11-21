@@ -56,7 +56,23 @@ browser ──► nginx :8080 ──► api (Express, :4000, not published) ─�
 - **Reliability**: issuance and delivery are idempotent. A reconciler (every 30s) re-enqueues APPROVED batches and
   PENDING deliveries that have gone stale. Redis runs with AOF persistence.
 
-## 3. Screens
+## 3. Key technical decisions
+
+| Decision | Why |
+|---|---|
+| **PostgreSQL as the source of truth** | Correctness lives in the DB: unique constraints (one decision per officer per stage per round, one certificate per candidate, unique certificate number, one delivery per certificate), row locks for concurrent decisions, and transactions for atomic CSV import. Redis can be wiped and the reconciler rebuilds pending work from Postgres. |
+| **Row lock + unique constraint for approvals** | `SELECT … FOR UPDATE` on the batch serialises concurrent decisions, so the stage transition happens once. The unique `(batchId, stage, round, actorId)` constraint is a second, independent guarantee that one officer can never count twice, even if the application code has a bug. |
+| **Redis + BullMQ for background work (the queue choice)** | Approval must not wait for 60 certificates and 60 WhatsApp messages. BullMQ gives durable jobs, retries with exponential backoff (issuance 5 attempts, delivery 6, starting at 2s), stalled-job recovery after worker crashes, and repeatable jobs (reconciler and SLA, every 30s). We already need Redis for pub/sub and rate limiting, so it adds no new infrastructure. SQS or Kafka would add a system without adding anything we need at this volume (see DEPLOYMENT.md §8). |
+| **Idempotent processors over "exactly-once" queues** | Queues deliver at least once. Every processor is safe to run twice: issuance locks the batch, returns if it is already ISSUED, and only creates missing certificates; delivery returns if SENT; the provider dedupes on `idempotencyKey = delivery id`, so a retry after "accepted but timed out" never sends twice. |
+| **Reconciler job** | Covers the gap between "DB committed" and "job enqueued" (a crash in between, or lost Redis data). Every 30s it re-enqueues APPROVED batches older than 30s and PENDING deliveries not updated for 2 minutes. |
+| **Simulated WhatsApp provider** | No real account is available. The stand-in fails 25% of the time and is sometimes "accepted but slow" (10%: it records the message, then answers after our 3s timeout, the most dangerous real-world case for duplicates). Modes: `flaky` (default), `healthy`, `down` via `WHATSAPP_MODE`. A real provider would implement the same `WhatsAppProvider.send()` interface. |
+| **SSE (not WebSockets)** | Updates only flow server to browser. SSE is plain HTTP, reconnects automatically, and passes through nginx (buffering off on `/api/events`). Redis pub/sub fans events out across API instances and from the worker. |
+| **PDF rendered on demand** | A revoked certificate can never be served (410), and there are no stale files. The trade-off is CPU per download and a 2.3 MB file because of the background image. DEPLOYMENT.md plans pre-rendered, compressed files in S3 at scale. |
+| **Append-only audit enforced by a DB trigger** | Audit rows are written in the *same transaction* as the change, so they can't disagree with it, and UPDATE/DELETE are rejected by Postgres itself. |
+| **One API image, two entrypoints (api, worker)** | One codebase and shared domain logic (`batchWorkflow.ts` is the only place batch status changes), scaled independently. No microservices. |
+| **Scope in one function, 404 for out-of-scope** | `scope.ts › batchScope` decides visibility for lists, details, actions and live events alike, so the rules can't drift apart, and other districts' batches stay invisible. |
+
+## 4. Screens
 
 | Batch list, live ("Waiting for me") | Batch detail with certificates |
 |---|---|
@@ -67,7 +83,7 @@ browser ──► nginx :8080 ──► api (Express, :4000, not published) ─�
 Screens: demo login, batches (tabs, live), batch detail (CSV upload, review actions, candidates, decisions,
 certificates, audit timeline), state overview, simulated WhatsApp outbox, and public `/verify/:certNo`.
 
-## 4. Key rules and how they are enforced
+## 5. Key rules and how they are enforced
 
 | Rule | Enforcement |
 |---|---|
@@ -80,7 +96,7 @@ certificates, audit timeline), state overview, simulated WhatsApp outbox, and pu
 | Public verification can't be enumerated | 50-bit random certificate numbers + Redis rate limit (60/min/IP) |
 | Staff don't see candidates' full phone numbers | API masks phones (`******1234`) for every role except the owning centre |
 
-## 5. API overview
+## 6. API overview
 
 All routes are under `/api`. "Scoped" means a batch outside your scope is 404.
 
@@ -110,7 +126,7 @@ All routes are under `/api`. "Scoped" means a batch outside your scope is 404.
 
 Errors are always `{ error: { code, message, details? } }`. A 500 never includes a stack trace.
 
-## 6. Tests
+## 7. Tests
 
 `docker compose run --rm api npm test` runs **46 API tests in 7 files** against a real Postgres test database
 (migrated and seeded by the global setup) and Redis. `npm run e2e -w apps/web` runs **7 Playwright browser tests**
@@ -128,7 +144,7 @@ against the running stack (not in CI; it needs every service). CI runs the API t
 | **Must never happen** | audit log rejects UPDATE and DELETE · no/tampered/expired token → 401 · centre approving / quality at district stage → 403 · another district's officer and another centre → 404 · public verify exposes only the allowed fields · demo-users exposes no emails · staff get masked phones · outbox masks phones · malformed JSON is 400, never 500 · SSE streams only visible events · stats/outbox are STATE only · PDF: wrong token 403, another centre 403 |
 | **Other** | health and readiness · full path DRAFT → APPROVED audit trail · batch of 60 goes to QUALITY_REVIEW · submitting with no candidates is refused · public verify is rate limited · e2e: live list update over SSE, PDF download is `application/pdf`, sample CSV link downloads |
 
-## 7. Out of scope / known limitations
+## 8. Out of scope / known limitations
 
 - **Demo authentication.** You pick a seeded user; there are no passwords or SSO. All authorization is still enforced
   server-side.
@@ -147,3 +163,35 @@ against the running stack (not in CI; it needs every service). CI runs the API t
   log a warning while they are in use.
 - **No deployment.** It runs locally with Docker Compose; DEPLOYMENT.md is a plan, not something that exists.
 - Not built: candidate self-service, bulk revocation, notifications other than WhatsApp, multi-language certificates.
+
+## 9. AI usage
+
+- **Tools:** Claude (planning, architecture review, writing the prompts, reviewing output, drafting docs) and Claude
+  Code (writing the code, running builds and tests, debugging).
+- **How the output was checked:**
+  - every phase had written acceptance criteria
+  - tests run against real Postgres and Redis in CI (GitHub Actions)
+  - a separate fresh-clone run of the migrations, the full test suite (repeated 3× to catch flakiness) and an
+    end-to-end API walkthrough (upload to approvals, issuance, delivery, verify, revoke)
+  - critical modules (`batchWorkflow.ts`, issuance, delivery) were read and reviewed by hand
+  - a Playwright run in a real browser, with screenshots reviewed by eye
+- **Example of a correction:** an AI-written concurrency test asserted the wrong thing (it assumed a specific officer
+  would win the lock). We changed it to assert the real invariant: exactly 2 decisions, and no officer with 2.
+- **Problems caught by verification** (each fixed in the commit history; see also docs/SELF_REVIEW.md):
+  - The SSE subscriber didn't wait for Redis `SUBSCRIBE` on the first connection, so live events could be missed. A
+    test failed in Docker, and step-by-step debugging in the container found the missing `return`.
+  - The API image didn't contain `samples/`, so 27 tests failed inside Docker. CI hadn't noticed because it runs the
+    tests outside Docker.
+  - A copied `.env.example` pointed the containers at their own `localhost` for Postgres and Redis.
+  - The readiness probe hung forever when Redis was down (`maxRetriesPerRequest: null`); each check now times out
+    after 2s.
+  - The Postgres healthcheck could pass while the init script's temporary server was still running; it now checks
+    over TCP.
+  - A third officer approving after the batch had already advanced got 403; it should be 409 (INVALID_STATE).
+  - A revoke landing during a WhatsApp send could be overwritten by SENT; the SENT update is now conditional.
+  - The rate limiter could be bypassed with a forged `X-Forwarded-For` while the API port was published; the port is
+    closed and `trust proxy` is exactly one hop (nginx).
+  - Malformed JSON returned 500 (now 400). Staff saw candidates' full phone numbers (now masked by the API).
+  - Screenshot review: the certificates table hid row 10 in a scroll box, a flash message went stale after the status
+    changed, and links styled as buttons were underlined.
+- All design decisions above were made deliberately, and the author can explain each one.
