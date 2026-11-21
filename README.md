@@ -104,12 +104,6 @@ the section being read. Under 900px the nav becomes a full-screen menu.
 | **State overview** | **Public verification** |
 | ![State overview](apps/web/e2e/screenshots/10-state-dashboard.png) | ![Verify](apps/web/e2e/screenshots/06-verify-valid.png) |
 
-### Mobile
-
-| Landing | Menu | Sign-in | Verify |
-|---|---|---|---|
-| ![Landing on mobile](apps/web/e2e/screenshots/landing-mobile.png) | ![Mobile menu](apps/web/e2e/screenshots/landing-mobile-menu.png) | ![Sign-in on mobile](apps/web/e2e/screenshots/login-mobile.png) | ![Verify on mobile](apps/web/e2e/screenshots/06b-verify-valid-mobile.png) |
-
 Screens: landing page, sign-in, batches (status tabs, live), batch detail (CSV upload, review actions, candidates,
 decisions, certificates, audit timeline), state overview (KPIs, needs attention, delivery health, pipeline, recent
 activity), simulated WhatsApp outbox, and public `/verify/:certNo`. Every signed-in page has **Log out**.
