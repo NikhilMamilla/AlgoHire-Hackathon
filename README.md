@@ -171,8 +171,9 @@ against the running stack (not in CI; it needs every service). CI runs the API t
 - **How the output was checked:**
   - every phase had written acceptance criteria
   - tests run against real Postgres and Redis in CI (GitHub Actions)
-  - a separate fresh-clone run of the migrations, the full test suite (repeated 3× to catch flakiness) and an
-    end-to-end API walkthrough (upload to approvals, issuance, delivery, verify, revoke)
+  - a separate run of the migrations, the full test suite and an end-to-end API walkthrough (upload to approvals,
+    issuance, delivery, verify, revoke), run on a fresh clone in Docker; earlier commits also re-run 3× to check for
+    flakiness
   - critical modules (`batchWorkflow.ts`, issuance, delivery) were read and reviewed by hand
   - a Playwright run in a real browser, with screenshots reviewed by eye
 - **Example of a correction:** an AI-written concurrency test asserted the wrong thing (it assumed a specific officer
