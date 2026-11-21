@@ -40,6 +40,8 @@ export function createApp() {
     res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', checks: { postgres, redis: redisCheck } });
   });
 
+  // TODO(csv-upload): the CSV parser must strip a leading UTF-8 BOM (﻿) and accept \r\n line endings.
+
   app.use(notFound);
   app.use(errorHandler);
   return app;

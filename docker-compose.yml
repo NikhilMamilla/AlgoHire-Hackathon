@@ -21,7 +21,8 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U certiflow -d certiflow"]
+      # -h 127.0.0.1: the init-script temp server listens on the socket only, so this waits for the real server.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U certiflow -d certiflow"]
       interval: 3s
       timeout: 3s
       retries: 20
