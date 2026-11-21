@@ -1,6 +1,6 @@
-import { logger } from './lib.js';
+import { enqueueIssue } from './queues.js';
 
-/** Called after the approving transaction commits. shortcut: logs only; Phase 3 enqueues certificate issuance on BullMQ. */
+/** Called after the approving transaction commits. Enqueue failures are logged; the reconciler covers them. */
 export async function onBatchApproved(batchId: string) {
-  logger.info({ batchId }, 'batch approved (certificate issuance not wired yet)');
+  await enqueueIssue(batchId);
 }
