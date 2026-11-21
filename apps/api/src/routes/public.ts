@@ -44,3 +44,12 @@ publicRouter.get(
     });
   }),
 );
+
+/** Landing-page figures: aggregate counts only, no personal data. Rate-limited like every /public route. */
+publicRouter.get(
+  '/public/stats',
+  ah(async (_req, res) => {
+    const [issued, valid] = await Promise.all([prisma.certificate.count(), prisma.certificate.count({ where: { status: 'VALID' } })]);
+    res.set('Cache-Control', 'no-store').json({ certificatesIssued: issued, validCertificates: valid });
+  }),
+);

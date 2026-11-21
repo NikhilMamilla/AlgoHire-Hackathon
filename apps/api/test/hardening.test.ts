@@ -59,3 +59,12 @@ describe('clean client errors (never a 500)', () => {
     expect(await prisma.candidate.count({ where: { batchId: id } })).toBe(0);
   });
 });
+
+describe('public stats', () => {
+  it('returns aggregate certificate counts only, without auth', async () => {
+    const res = await request(app).get('/api/public/stats');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ certificatesIssued: 0, validCertificates: 0 });
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+});
