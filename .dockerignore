@@ -2,3 +2,6 @@
 **/dist
 .git
 .env
+**/test-results
+**/playwright-report
+apps/web/e2e

@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/styles/morph.css"
+        ],
+        "createdAt": "2026-11-21T07:15:52.376Z",
+        "reason": "Claude triage: the flagged rules are full-width top holographic foil strips (inset: 0 0 auto 0, 4-6px tall), not one-side accent borders; holo-morphism was requested by the user"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/styles/sections.css"
+        ],
+        "createdAt": "2026-11-21T07:15:52.905Z",
+        "reason": "Claude triage: the flagged rules are full-width top holographic foil strips (inset: 0 0 auto 0, 4-6px tall), not one-side accent borders; holo-morphism was requested by the user"
+      }
+    ]
+  }
+}
