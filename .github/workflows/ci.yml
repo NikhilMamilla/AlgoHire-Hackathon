@@ -1,0 +1,46 @@
+name: ci
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: certiflow
+          POSTGRES_PASSWORD: certiflow
+          POSTGRES_DB: certiflow_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U certiflow"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://certiflow:certiflow@localhost:5432/certiflow_test
+      TEST_DATABASE_URL: postgresql://certiflow:certiflow@localhost:5432/certiflow_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+        working-directory: apps/api
+      - run: npx prisma migrate deploy
+        working-directory: apps/api
+      - run: npm test
+      - run: npm run build -w apps/web
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build
