@@ -71,20 +71,24 @@ export default function Batches() {
                 <th>Centre</th>
                 <th className="num">Candidates</th>
                 <th>Status</th>
-                <th>Approvals</th>
+                <th className="num">Approvals</th>
                 <th>In stage</th>
-                <th>Round</th>
+                <th className="num">Round</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((b) => (
                 <tr key={b.id} onClick={() => navigate(`/batches/${b.id}`)}>
                   <td>
-                    <Link to={`/batches/${b.id}`} onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/batches/${b.id}`} onClick={(e) => e.stopPropagation()} className="truncate" title={b.courseName}>
                       {b.courseName}
                     </Link>
                   </td>
-                  <td>{b.centre?.name ?? '—'}</td>
+                  <td>
+                    <span className="truncate" title={b.centre?.name}>
+                      {b.centre?.name ?? '—'}
+                    </span>
+                  </td>
                   <td className="num">{b.candidateCount}</td>
                   <td>
                     <span className="badges">
@@ -92,9 +96,9 @@ export default function Batches() {
                       {b.escalatedAt && REVIEW.includes(b.status) && <EscalatedBadge />}
                     </span>
                   </td>
-                  <td>{b.status === 'DISTRICT_REVIEW' ? `${b.approvals}/2` : '—'}</td>
+                  <td className="num">{b.status === 'DISTRICT_REVIEW' ? `${b.approvals}/2` : '—'}</td>
                   <td>{since(b.stageEnteredAt ?? b.createdAt, now)}</td>
-                  <td>{b.round}</td>
+                  <td className="num">{b.round}</td>
                 </tr>
               ))}
             </tbody>

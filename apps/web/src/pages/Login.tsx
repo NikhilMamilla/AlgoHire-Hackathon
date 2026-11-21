@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, useAsync, type DemoUser, type Role, type User } from '../api';
 import { useAuth } from '../App';
-import { Alert, Skeleton, errorText } from '../components';
+import { Alert, Icon, Mark, Skeleton, errorText } from '../components';
 
 const GROUPS: { role: Role; label: string }[] = [
   { role: 'CENTRE', label: 'Training centre' },
@@ -42,9 +42,10 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page">
+    <main className="login-page" id="main" tabIndex={-1}>
       <div className="signin-card">
         <Link to="/" className="brand brand-dark">
+          <Mark size={28} />
           CertiFlow
         </Link>
         <h1>Sign in to CertiFlow</h1>
@@ -67,14 +68,17 @@ export default function Login() {
                   {members.map((u) => (
                     <li key={u.id}>
                       <button className="user-card" onClick={() => choose(u)} disabled={busy !== null}>
-                        <span className="avatar" aria-hidden="true">
+                        <span className={`avatar avatar-${u.role.toLowerCase()}`} aria-hidden="true">
                           {initials(u.name)}
                         </span>
                         <span className="user-card-text">
                           <span className="user-card-name">{u.name}</span>
                           <span className="muted small">{u.centreName ?? u.districtName ?? 'State-wide'}</span>
                         </span>
-                        <span className="user-card-action">{busy === u.id ? 'Signing in…' : 'Sign in'}</span>
+                        <span className="user-card-action">
+                          {busy === u.id ? 'Signing in…' : 'Sign in'}
+                          <Icon name="chevron" />
+                        </span>
                       </button>
                     </li>
                   ))}
@@ -87,6 +91,6 @@ export default function Login() {
           Checking a certificate? <Link to="/verify">Verify it here</Link>, no sign-in needed.
         </p>
       </div>
-    </div>
+    </main>
   );
 }

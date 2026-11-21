@@ -84,6 +84,10 @@ export default function BatchDetail() {
         </div>
       </div>
 
+      <p className="sr-only" aria-live="polite">
+        Batch status: {STATUS_LABEL[b.status] ?? b.status}
+      </p>
+
       {flash && (
         <Alert tone={flash.tone} onClose={() => setFlash(null)}>
           {flash.text}
@@ -280,7 +284,7 @@ function CentreActions({ batch: b, onDone, setFlash }: { batch: Batch; onDone: (
       <h2>Candidates CSV</h2>
       <form className="upload-row" onSubmit={upload}>
         <input key={inputKey} type="file" accept=".csv,text/csv" aria-label="Candidate CSV file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <button className="btn btn-secondary" disabled={!file || busy !== null}>
+        <button className="btn btn-secondary" disabled={!file || busy !== null} title={!file ? 'Choose a CSV file first' : undefined}>
           {busy === 'upload' ? 'Uploading…' : 'Upload CSV'}
         </button>
         <span className="muted small">
@@ -319,7 +323,12 @@ function CentreActions({ batch: b, onDone, setFlash }: { batch: Batch; onDone: (
       )}
 
       <div className="action-row">
-        <button className="btn btn-primary" onClick={submit} disabled={busy !== null || b.candidates.length === 0}>
+        <button
+          className="btn btn-primary"
+          onClick={submit}
+          disabled={busy !== null || b.candidates.length === 0}
+          title={b.candidates.length === 0 ? 'Upload candidates before submitting' : undefined}
+        >
           {busy === 'submit' ? 'Submitting…' : b.status === 'RETURNED' ? 'Resubmit for review' : 'Submit for review'}
         </button>
         {b.candidates.length === 0 && <span className="muted small">Upload candidates before submitting.</span>}

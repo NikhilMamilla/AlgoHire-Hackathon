@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { fmtDate } from '../components';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Icon, Mark, fmtDate } from '../components';
 
 const CERT_NO = /^CF-[0-9A-HJKMNP-TV-Z]{10}$/;
 
@@ -62,10 +62,13 @@ export default function Verify() {
   return (
     <div className="public">
       <header className="public-head">
-        <span className="brand brand-dark">CertiFlow</span>
+        <Link to="/" className="brand brand-dark">
+          <Mark size={24} />
+          CertiFlow
+        </Link>
         <span className="muted">Certificate verification · Pragati Skills Mission</span>
       </header>
-      <main className="public-main">
+      <main className="public-main" id="main" tabIndex={-1}>
         <h1>Verify a certificate</h1>
         <p className="muted">Enter the certificate number printed on the certificate, or scan its QR code.</p>
         <form className="verify-form" onSubmit={submit}>
@@ -127,7 +130,7 @@ function Record({ d, valid, title, subtitle, checkedAt }: { d: Found; valid: boo
     <article className={`result ${valid ? 'result-valid' : 'result-revoked'}`} role={valid ? 'status' : 'alert'}>
       <header className="result-band">
         <span className="result-icon" aria-hidden="true">
-          {valid ? '✓' : '✕'}
+          <Icon name={valid ? 'check' : 'cross'} size={22} />
         </span>
         <div>
           <div className="result-title">{title}</div>
@@ -154,7 +157,29 @@ function Details({ d }: { d: Found }) {
       <dt>Issued</dt>
       <dd>{fmtDate(d.issuedAt)}</dd>
       <dt>Certificate no.</dt>
-      <dd className="mono">{d.certificateNo}</dd>
+      <dd>
+        <span className="mono">{d.certificateNo}</span>
+        <CopyButton text={d.certificateNo} />
+      </dd>
     </dl>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable (e.g. insecure context): the number stays selectable */
+    }
+  };
+  return (
+    <button type="button" className="btn btn-secondary btn-sm copy-btn" onClick={copy} aria-label={copied ? 'Copied' : `Copy certificate number ${text}`}>
+      <Icon name="copy" size={14} />
+      <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+    </button>
   );
 }

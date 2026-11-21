@@ -128,7 +128,12 @@ export default function StateDashboard() {
               ))}
             </dl>
           )}
-          <button className="btn btn-secondary" onClick={retry} disabled={busy || !s || !(s.deliveries.FAILED ?? 0)}>
+          <button
+            className="btn btn-secondary"
+            onClick={retry}
+            disabled={busy || !s || !(s.deliveries.FAILED ?? 0)}
+            title={s && !(s.deliveries.FAILED ?? 0) ? 'No failed deliveries to retry' : undefined}
+          >
             {busy ? 'Retrying…' : 'Retry failed deliveries'}
           </button>
           {s && !(s.deliveries.FAILED ?? 0) && <p className="muted small">No failed deliveries right now.</p>}
