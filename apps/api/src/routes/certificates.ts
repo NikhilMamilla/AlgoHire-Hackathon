@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { userFromRequest } from '../auth.js';
+import { z } from 'zod';
+import { audit } from '../audit.js';
+import { currentUser, requireAuth, requireRole, userFromRequest } from '../auth.js';
 import { renderCertificatePdf } from '../certificates/pdf.js';
 import { verifyDownloadToken } from '../certificates/token.js';
 import { HttpError } from '../errors.js';
 import { ah, prisma } from '../lib.js';
+import { batchScope } from '../scope.js';
 
 export const certificatesRouter = Router();
 
@@ -43,5 +46,65 @@ certificatesRouter.get(
     res
       .set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${cert.certificateNo}.pdf"`, 'Cache-Control': 'no-store' })
       .send(pdf);
+  }),
+);
+
+/** Staff view: the certificate, its delivery and its audit timeline. Scoped through the batch (404 if not visible). */
+certificatesRouter.get(
+  '/certificates/:certNo',
+  requireAuth,
+  ah(async (req, res) => {
+    const cert = await prisma.certificate.findFirst({
+      where: { certificateNo: req.params.certNo, batch: batchScope(currentUser(req)) },
+      include: {
+        candidate: { select: { fullName: true, candidateRef: true, completionDate: true } },
+        delivery: true,
+        batch: { select: { id: true, courseName: true, status: true } },
+      },
+    });
+    if (!cert) throw notFound();
+    const audits = await prisma.auditLog.findMany({
+      where: {
+        OR: [
+          { entityType: 'Certificate', entityId: cert.id },
+          ...(cert.delivery ? [{ entityType: 'Delivery', entityId: cert.delivery.id }] : []),
+        ],
+      },
+      orderBy: { id: 'asc' },
+    });
+    res.json({ certificate: { ...cert, audit: audits.map((a) => ({ ...a, id: a.id.toString() })) } });
+  }),
+);
+
+/** STATE only. Never deletes: the row stays with revokedAt/revokedById/revokeReason. */
+certificatesRouter.post(
+  '/certificates/:certNo/revoke',
+  requireAuth,
+  requireRole('STATE'),
+  ah(async (req, res) => {
+    const user = currentUser(req);
+    const { certNo } = req.params;
+    const { reason } = z.object({ reason: z.string().trim().min(5).max(500) }).parse(req.body);
+    const certificate = await prisma.$transaction(async (tx) => {
+      const [locked] = await tx.$queryRaw<{ id: string; status: string }[]>`
+        SELECT id, status FROM "Certificate" WHERE "certificateNo" = ${certNo} FOR UPDATE`;
+      if (!locked) throw notFound();
+      if (locked.status === 'REVOKED') throw new HttpError(409, 'ALREADY_REVOKED', 'Certificate is already revoked');
+
+      const c = await tx.certificate.update({
+        where: { id: locked.id },
+        data: { status: 'REVOKED', revokedAt: new Date(), revokedById: user.id, revokeReason: reason },
+      });
+      await audit(tx, { actorId: user.id, action: 'CERTIFICATE_REVOKED', entityType: 'Certificate', entityId: c.id, metadata: { certificateNo: certNo, reason } });
+
+      // Never send a revoked certificate: cancel a delivery that hasn't gone out (FAILED too, so retry-failed skips it).
+      const delivery = await tx.delivery.findUnique({ where: { certificateId: c.id } });
+      if (delivery && (delivery.status === 'PENDING' || delivery.status === 'FAILED')) {
+        await tx.delivery.update({ where: { id: delivery.id }, data: { status: 'CANCELLED' } });
+        await audit(tx, { actorId: user.id, action: 'DELIVERY_CANCELLED', entityType: 'Delivery', entityId: delivery.id, metadata: { reason: 'certificate revoked' } });
+      }
+      return c;
+    });
+    res.json({ certificate });
   }),
 );

@@ -44,11 +44,16 @@ export async function deliverCertificate(deliveryId: string, provider: WhatsAppP
       provider.send({ to: `+91${cert.candidate.phone}`, body, idempotencyKey: d.id }),
       opts.timeoutMs ?? SEND_TIMEOUT_MS,
     );
-    await prisma.$transaction(async (tx) => {
-      await tx.delivery.update({ where: { id: d.id }, data: { status: 'SENT', providerMessageId, attempts: { increment: 1 }, lastError: null } });
-      await audit(tx, { actorId: null, action: 'CERTIFICATE_DELIVERED', entityType: 'Delivery', entityId: d.id, metadata: { providerMessageId, attempt: d.attempts + 1 } });
+    // Conditional: if a revocation cancelled this delivery mid-send, keep CANCELLED (the message is in OutboundMessage).
+    const sent = await prisma.$transaction(async (tx) => {
+      const { count } = await tx.delivery.updateMany({
+        where: { id: d.id, status: { in: ['PENDING', 'FAILED'] } },
+        data: { status: 'SENT', providerMessageId, attempts: { increment: 1 }, lastError: null },
+      });
+      if (count) await audit(tx, { actorId: null, action: 'CERTIFICATE_DELIVERED', entityType: 'Delivery', entityId: d.id, metadata: { providerMessageId, attempt: d.attempts + 1 } });
+      return count > 0;
     });
-    return 'SENT' as const;
+    return sent ? ('SENT' as const) : ('CANCELLED' as const);
   } catch (err) {
     await prisma.delivery.update({ where: { id: d.id }, data: { attempts: { increment: 1 }, lastError: (err as Error).message } });
     throw err;

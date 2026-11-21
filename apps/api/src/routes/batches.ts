@@ -130,3 +130,19 @@ batchesRouter.post(
     res.status(201).json(await decide(currentUser(req), req.params.id, type, reason));
   }),
 );
+
+batchesRouter.get(
+  '/batches/:id/certificates',
+  ah(async (req, res) => {
+    await assertVisible(prisma, currentUser(req), req.params.id);
+    const certificates = await prisma.certificate.findMany({
+      where: { batchId: req.params.id },
+      include: {
+        candidate: { select: { fullName: true, candidateRef: true } },
+        delivery: { select: { status: true, attempts: true, lastError: true, updatedAt: true } },
+      },
+      orderBy: { candidate: { candidateRef: 'asc' } },
+    });
+    res.json({ certificates });
+  }),
+);

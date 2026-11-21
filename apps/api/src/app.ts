@@ -3,6 +3,7 @@ import express from 'express';
 import { pinoHttp } from 'pino-http';
 import { errorHandler, notFound } from './errors.js';
 import { logger, prisma, redis } from './lib.js';
+import { auditRouter } from './routes/audit.js';
 import { authRouter } from './routes/auth.js';
 import { batchesRouter } from './routes/batches.js';
 import { certificatesRouter } from './routes/certificates.js';
@@ -52,6 +53,7 @@ export function createApp() {
   app.use('/api', deliveriesRouter);
   app.use('/api', certificatesRouter);
   app.use('/api', publicRouter);
+  app.use('/api', auditRouter);
 
   app.use(notFound);
   app.use(errorHandler);
