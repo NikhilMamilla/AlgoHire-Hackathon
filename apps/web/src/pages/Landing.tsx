@@ -189,9 +189,13 @@ export default function Landing() {
     const onResize = () => window.innerWidth > 900 && setMenuOpen(false);
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
+    // The menu covers the screen: stop the page behind it from scrolling while it is open.
+    const previous = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
+      document.documentElement.style.overflow = previous;
     };
   }, [menuOpen]);
 
@@ -433,40 +437,51 @@ export default function Landing() {
 
         <Guarantees />
 
-        <Section id="architecture" title="Architecture" tone="bg" intro="Five containers, one codebase. The API and the worker share one image and talk through Redis.">
-          <div className="lp-arch">
-            <ArchitectureDiagram />
-            <div className="lp-arch-side">
-              <h3>Why these choices</h3>
-              <ul className="lp-why">
-                <li>
-                  <strong>PostgreSQL</strong> holds correctness in constraints and transactions, so the rules hold even if application code has a bug.
-                </li>
-                <li>
-                  <strong>Redis + BullMQ</strong> gives durable jobs, retries with backoff and recovery after a worker crash, without adding another system.
-                </li>
-                <li>
-                  <strong>Server-Sent Events</strong> are the simplest way to push one-way live updates through nginx.
-                </li>
-              </ul>
-              <div className="lp-real">
-                <h3>Real vs simulated</h3>
-                <dl>
-                  <dt>Simulated</dt>
-                  <dd>The WhatsApp provider and the one-click demo sign-in.</dd>
-                  <dt>Real</dt>
-                  <dd>Everything else: database, queues, workers, PDFs, verification, audit.</dd>
-                  <dt>Not deployed</dt>
-                  <dd>
-                    Runs locally with Docker Compose; see{' '}
-                    <a href={`${REPO}/blob/main/DEPLOYMENT.md`} target="_blank" rel="noreferrer">
-                      DEPLOYMENT.md
-                    </a>
-                    .
-                  </dd>
-                </dl>
-              </div>
-            </div>
+        <Section id="architecture" title="Architecture" tone="bg" intro="Five containers, one codebase. The API and the worker share one image and talk through Redis; PostgreSQL is the source of truth.">
+          <figure className="lp-arch-figure">
+            <a href="/architecture.webp" target="_blank" rel="noreferrer" className="lp-arch-zoom">
+              <img
+                src="/architecture.webp"
+                width={1672}
+                height={941}
+                loading="lazy"
+                decoding="async"
+                alt="CertiFlow architecture. Training centres, district officers, the quality team and the state office use the React app through nginx on port 8080, which proxies /api to the Express API. The API runs demo sign-in, the batch workflow state machine, CSV validation, PDF and QR rendering, rate-limited public verification and live events. It writes to PostgreSQL 16, the source of truth, and enqueues jobs in Redis 7. A worker built from the same image issues certificates in one transaction, sends WhatsApp messages through a simulated provider with retries and an idempotency key, and runs the reconciler and SLA escalation every 30 seconds. Employers scan the QR code to get the live status, and live updates reach browsers over Server-Sent Events through Redis pub/sub."
+              />
+              <span className="lp-arch-open" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M14 4h6v6 M20 4l-8 8 M10 20H4v-6 M4 20l8-8" />
+                </svg>
+                Open full size
+              </span>
+              <span className="sr-only"> (opens the full-size diagram in a new tab)</span>
+            </a>
+            <figcaption>Numbered steps follow one batch from upload (1) to public verification (7). Solid lines are requests, dashed lines background jobs, dotted lines live events.</figcaption>
+          </figure>
+
+          <div className="lp-arch-notes">
+            <article className="lp-arch-note">
+              <h3>PostgreSQL 16</h3>
+              <p>The source of truth. Unique constraints, row locks and transactions enforce the rules, so they hold even if application code has a bug.</p>
+            </article>
+            <article className="lp-arch-note">
+              <h3>Redis 7 + BullMQ</h3>
+              <p>Durable background work: retries with backoff, recovery after a worker crash and repeatable jobs, without adding another system.</p>
+            </article>
+            <article className="lp-arch-note">
+              <h3>Server-Sent Events</h3>
+              <p>Live screens, simply: one-way updates over plain HTTP through nginx; Redis pub/sub fans them out to every API instance.</p>
+            </article>
+            <article className="lp-arch-note lp-arch-real">
+              <h3>Real vs simulated</h3>
+              <p>
+                Only two things are simulated: the WhatsApp provider and the one-click demo sign-in. Everything else is real. It runs locally with Docker Compose; see{' '}
+                <a href={`${REPO}/blob/main/DEPLOYMENT.md`} target="_blank" rel="noreferrer">
+                  DEPLOYMENT.md
+                </a>{' '}
+                for production.
+              </p>
+            </article>
           </div>
         </Section>
 
@@ -547,66 +562,6 @@ export default function Landing() {
   );
 }
 
-/** Browser → nginx → API → PostgreSQL; API ⇄ Redis ⇄ Worker; SSE back to the browser. Styled from CSS tokens. */
-function ArchitectureDiagram() {
-  const box = (x: number, y: number, w: number, title: string, sub: string, strong = false) => (
-    <g>
-      <rect x={x} y={y} width={w} height={64} rx={10} className={strong ? 'arch-box arch-box-strong' : 'arch-box'} />
-      <text x={x + w / 2} y={y + 28} textAnchor="middle" className="arch-title">
-        {title}
-      </text>
-      <text x={x + w / 2} y={y + 47} textAnchor="middle" className="arch-sub">
-        {sub}
-      </text>
-    </g>
-  );
-  const label = (x: number, y: number, text: string) => (
-    <text x={x} y={y} textAnchor="middle" className="arch-label">
-      {text}
-    </text>
-  );
-  return (
-    <svg
-      className="lp-arch-svg"
-      viewBox="0 0 720 330"
-      role="img"
-      aria-label="Browser connects through nginx to the Express API, which uses PostgreSQL. The API and the worker share Redis for BullMQ queues and pub/sub; the worker issues certificates, simulates WhatsApp and runs the SLA and reconciler jobs. Live updates return to the browser over Server-Sent Events."
-    >
-      <defs>
-        <marker id="lp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" className="arch-arrow" />
-        </marker>
-      </defs>
-      {box(10, 20, 150, 'Browser', 'React app')}
-      {box(200, 20, 150, 'nginx', 'static + /api proxy')}
-      {box(390, 20, 150, 'API', 'Express · auth · workflow', true)}
-      {box(580, 20, 130, 'PostgreSQL', 'data · audit log')}
-      {box(390, 170, 150, 'Redis', 'BullMQ · pub/sub')}
-      {box(560, 170, 150, 'Worker', 'issuance · WhatsApp sim')}
-
-      <line x1={160} y1={52} x2={198} y2={52} className="arch-line" markerEnd="url(#lp-arrow)" />
-      <line x1={350} y1={52} x2={388} y2={52} className="arch-line" markerEnd="url(#lp-arrow)" />
-      <line x1={540} y1={52} x2={578} y2={52} className="arch-line" markerEnd="url(#lp-arrow)" />
-      {label(560, 44, 'SQL')}
-
-      <line x1={465} y1={84} x2={465} y2={168} className="arch-line" markerEnd="url(#lp-arrow)" markerStart="url(#lp-arrow)" />
-      {label(500, 132, 'jobs')}
-      {label(500, 146, 'events')}
-
-      <line x1={540} y1={202} x2={558} y2={202} className="arch-line" markerEnd="url(#lp-arrow)" markerStart="url(#lp-arrow)" />
-
-      <line x1={645} y1={168} x2={645} y2={86} className="arch-line arch-line-dashed" markerEnd="url(#lp-arrow)" />
-      {label(678, 132, 'tx')}
-
-      <path d="M 410 86 C 380 310, 110 310, 85 88" className="arch-line arch-line-sse" markerEnd="url(#lp-arrow)" />
-      {label(245, 292, 'SSE · live updates')}
-
-      <text x={635} y={262} textAnchor="middle" className="arch-sub">
-        SLA + reconciler every 30s
-      </text>
-    </svg>
-  );
-}
 
 /** Guarantees: a synced numbered list (all the content, keyboard and screen-reader friendly) + a React Bits CardSwap stack. */
 function Guarantees() {
