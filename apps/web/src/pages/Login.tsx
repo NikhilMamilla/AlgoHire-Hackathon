@@ -2,13 +2,37 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, useAsync, type DemoUser, type Role, type User } from '../api';
 import { useAuth } from '../App';
-import { Alert, Icon, Mark, Skeleton, errorText } from '../components';
+import { Alert, Icon, Mark, errorText } from '../components';
 
-const GROUPS: { role: Role; label: string }[] = [
-  { role: 'CENTRE', label: 'Training centre' },
-  { role: 'DISTRICT_OFFICER', label: 'District officers' },
-  { role: 'QUALITY', label: 'Quality team' },
-  { role: 'STATE', label: 'State office' },
+/**
+ * Accounts laid out by hierarchy, top to bottom: the state office decides last, reviewers sit in the middle,
+ * and the training centre starts every batch. Each tier says what that level does.
+ */
+const TIERS: { key: string; level: string; title: string; does: string; groups: { role: Role; label: string }[] }[] = [
+  {
+    key: 'state',
+    level: 'Tier 1',
+    title: 'State office',
+    does: 'Final approval, revocation and the state dashboard.',
+    groups: [{ role: 'STATE', label: 'State office' }],
+  },
+  {
+    key: 'review',
+    level: 'Tier 2',
+    title: 'Review',
+    does: 'Two district officers approve each batch; the quality team checks batches of 50+.',
+    groups: [
+      { role: 'DISTRICT_OFFICER', label: 'District officers' },
+      { role: 'QUALITY', label: 'Quality team' },
+    ],
+  },
+  {
+    key: 'centre',
+    level: 'Tier 3',
+    title: 'Training centre',
+    does: 'Creates a batch, uploads the candidate CSV and submits it.',
+    groups: [{ role: 'CENTRE', label: 'Training centre' }],
+  },
 ];
 
 const initials = (name: string) =>
@@ -41,70 +65,83 @@ export default function Login() {
     }
   };
 
+  const byRole = (role: Role) => (users.data?.users ?? []).filter((u) => u.role === role).sort((a, b) => a.name.localeCompare(b.name));
+
   return (
-    <main className="login-page mesh-bg" id="main" tabIndex={-1}>
-      <div className="login-split">
-      <aside className="login-aside" aria-label="About this demo">
+    <main className="signin mesh-bg" id="main" tabIndex={-1}>
+      <header className="signin-top">
         <Link to="/" className="brand">
-          <Mark size={30} />
+          <Mark size={28} />
           CertiFlow
         </Link>
-        <div>
-          <h2>Every role in the certificate pipeline, one click away.</h2>
-          <ul>
-            <li>Training centres upload a candidate CSV and submit it.</li>
-            <li>District, quality and state reviewers approve, return or reject.</li>
-            <li>Certificates are issued and sent on WhatsApp; anyone can verify them.</li>
-          </ul>
+        <nav className="signin-links" aria-label="Elsewhere">
+          <Link to="/verify">Verify a certificate</Link>
+          <Link to="/">Back to home</Link>
+        </nav>
+      </header>
+
+      <div className="signin-body">
+        <div className="signin-head">
+          <div>
+            <h1 id="signin-title">Sign in to CertiFlow</h1>
+            <p className="signin-sub">Pick a demo account. Each one sees only what its role is allowed to see.</p>
+          </div>
+          <p className="signin-note">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z M9 12l2 2 4-4" />
+            </svg>
+            <span>Demo environment: sign-in is one click by design so reviewers can switch roles. Every permission is enforced by the server.</span>
+          </p>
         </div>
-        <p>
-          <Link to="/">About CertiFlow</Link> · <Link to="/verify">Verify a certificate</Link>
-        </p>
-      </aside>
-      <div className="signin-card">
-        <h1>Sign in to CertiFlow</h1>
-        <p className="signin-note">
-          Demo environment: sign-in is one click by design so reviewers can switch roles. Every permission is enforced by the server.
-        </p>
-        {user && <p className="muted small">Signed in as {user.name}. Choose another user to switch.</p>}
+
+        {user && <p className="signin-current">Signed in as {user.name}. Choose another account to switch.</p>}
         {error && <Alert>{error}</Alert>}
-        {users.error && <Alert>Could not load demo users: {errorText(users.error)}</Alert>}
-        {users.loading && !users.data && <Skeleton rows={4} />}
+        {users.error && <Alert>Could not load demo accounts: {errorText(users.error)}</Alert>}
 
-        {users.data &&
-          GROUPS.map((g) => {
-            const members = users.data!.users.filter((u) => u.role === g.role);
-            if (!members.length) return null;
-            return (
-              <section key={g.role} className="signin-group" aria-labelledby={`group-${g.role}`}>
-                <h2 id={`group-${g.role}`}>{g.label}</h2>
-                <ul>
-                  {members.map((u) => (
-                    <li key={u.id}>
-                      <button className="user-card" onClick={() => choose(u)} disabled={busy !== null}>
-                        <span className={`avatar avatar-${u.role.toLowerCase()}`} aria-hidden="true">
-                          {initials(u.name)}
-                        </span>
-                        <span className="user-card-text">
-                          <span className="user-card-name">{u.name}</span>
-                          <span className="muted small">{u.centreName ?? u.districtName ?? 'State-wide'}</span>
-                        </span>
-                        <span className="user-card-action">
-                          {busy === u.id ? 'Signing in…' : 'Sign in'}
-                          <Icon name="chevron" />
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
-
-        <p className="muted small signin-foot">
-          Checking a certificate? <Link to="/verify">Verify it here</Link>, no sign-in needed.
-        </p>
-      </div>
+        <ol className="signin-tiers" aria-label="Demo accounts by hierarchy" aria-busy={users.loading}>
+          {TIERS.map((tier) => (
+            <li key={tier.key} className={`signin-tier tier-${tier.key}`}>
+              <div className="signin-tier-label">
+                <span className="signin-tier-dot" aria-hidden="true" />
+                <span className="signin-tier-level">{tier.level}</span>
+                <h2>{tier.title}</h2>
+                <p>{tier.does}</p>
+              </div>
+              <div className="signin-tier-groups">
+                {tier.groups.map((g) => (
+                  <div key={g.role} className="signin-group" role="group" aria-label={g.label}>
+                    {tier.groups.length > 1 && <span className="signin-group-label">{g.label}</span>}
+                    <ul>
+                      {users.loading && !users.data ? (
+                        <li className="signin-skel" aria-hidden="true" />
+                      ) : (
+                        byRole(g.role).map((u) => (
+                          <li key={u.id}>
+                            <button className="user-card" onClick={() => choose(u)} disabled={busy !== null}>
+                              <span className={`avatar avatar-${u.role.toLowerCase()}`} aria-hidden="true">
+                                {initials(u.name)}
+                              </span>
+                              <span className="user-card-text">
+                                <span className="user-card-name">{u.name}</span>
+                                <span className="signin-scope" title={u.centreName ?? u.districtName ?? 'State-wide'}>
+                                  {u.centreName ?? u.districtName ?? 'State-wide'}
+                                </span>
+                              </span>
+                              <span className="user-card-action">
+                                <span className="sr-only">{busy === u.id ? 'Signing in…' : 'Sign in'}</span>
+                                <Icon name="chevron" />
+                              </span>
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </main>
   );
