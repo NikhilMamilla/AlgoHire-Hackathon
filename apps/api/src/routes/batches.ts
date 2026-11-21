@@ -16,6 +16,8 @@ batchesRouter.use('/batches', requireAuth);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024, files: 1 } });
 
+export const maskPhone = (phone: string) => `******${phone.slice(-4)}`;
+
 const STAGE_OF: Partial<Record<BatchStatus, string>> = { DISTRICT_REVIEW: 'DISTRICT', QUALITY_REVIEW: 'QUALITY', STATE_REVIEW: 'STATE' };
 
 batchesRouter.post(
@@ -78,8 +80,9 @@ batchesRouter.get(
 batchesRouter.get(
   '/batches/:id',
   ah(async (req, res) => {
+    const user = currentUser(req);
     const batch = await prisma.batch.findFirst({
-      where: { AND: [{ id: req.params.id }, batchScope(currentUser(req))] },
+      where: { AND: [{ id: req.params.id }, batchScope(user)] },
       include: {
         centre: { select: { id: true, name: true } },
         district: { select: { name: true } },
@@ -91,8 +94,14 @@ batchesRouter.get(
     const audits = await prisma.auditLog.findMany({ where: { entityType: 'Batch', entityId: batch.id }, orderBy: { id: 'asc' } });
     const actorIds = [...new Set(audits.map((a) => a.actorId).filter((id): id is string => !!id))];
     const names = new Map((await prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]));
+    // Data minimisation: only the owning centre (the only CENTRE that can see this batch) gets full phone numbers.
+    const candidates = user.role === 'CENTRE' ? batch.candidates : batch.candidates.map((c) => ({ ...c, phone: maskPhone(c.phone) }));
     res.json({
-      batch: { ...batch, audit: audits.map((a) => ({ ...a, id: a.id.toString(), actorName: a.actorId ? (names.get(a.actorId) ?? null) : null })) },
+      batch: {
+        ...batch,
+        candidates,
+        audit: audits.map((a) => ({ ...a, id: a.id.toString(), actorName: a.actorId ? (names.get(a.actorId) ?? null) : null })),
+      },
     });
   }),
 );

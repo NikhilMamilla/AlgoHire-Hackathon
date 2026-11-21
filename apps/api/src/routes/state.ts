@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../auth.js';
 import { ah, prisma } from '../lib.js';
+import { maskPhone } from './batches.js';
 
 export const stateRouter = Router();
 stateRouter.use(['/stats', '/dev'], requireAuth, requireRole('STATE'));
@@ -33,6 +34,6 @@ stateRouter.get(
   '/dev/outbox',
   ah(async (_req, res) => {
     const messages = await prisma.outboundMessage.findMany({ orderBy: { createdAt: 'desc' }, take: 200 });
-    res.json({ messages: messages.map((m) => ({ id: m.id, to: `******${m.to.slice(-4)}`, body: m.body, providerMessageId: m.providerMessageId, createdAt: m.createdAt })) });
+    res.json({ messages: messages.map((m) => ({ id: m.id, to: maskPhone(m.to), body: m.body, providerMessageId: m.providerMessageId, createdAt: m.createdAt })) });
   }),
 );

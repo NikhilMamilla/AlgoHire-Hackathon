@@ -1,6 +1,8 @@
-import { config } from './config.js';
+import { config, devSecretsInUse } from './config.js';
 import { createApp } from './app.js';
 import { logger, prisma, redis } from './lib.js';
+
+if (devSecretsInUse().length) logger.warn({ secrets: devSecretsInUse() }, 'using DEV-ONLY default secrets; set them before any real deployment');
 
 const server = createApp().listen(config.port, () => logger.info({ port: config.port }, 'api listening'));
 

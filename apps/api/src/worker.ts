@@ -1,7 +1,7 @@
 // Wires the plain job functions in src/jobs/* to BullMQ. No business logic lives here.
 import { writeFile } from 'node:fs/promises';
 import { Worker, type Processor } from 'bullmq';
-import './config.js';
+import { devSecretsInUse } from './config.js';
 import { deliverCertificate, markDeliveryFailed } from './jobs/deliverCertificate.js';
 import { issueCertificates } from './jobs/issueCertificates.js';
 import { escalateStuckBatches } from './jobs/escalate.js';
@@ -9,6 +9,8 @@ import { reconcile } from './jobs/reconcile.js';
 import { createRedis, logger, prisma } from './lib.js';
 import { closeQueues, queue, QUEUES, type QueueName } from './queues.js';
 import { SimulatedWhatsAppProvider } from './whatsapp/provider.js';
+
+if (devSecretsInUse().length) logger.warn({ secrets: devSecretsInUse() }, 'using DEV-ONLY default secrets; set them before any real deployment');
 
 const workers: Worker[] = [];
 function start(name: QueueName, processor: Processor, concurrency = 1) {
