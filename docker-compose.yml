@@ -51,8 +51,10 @@ services:
     image: certiflow-api
     command: sh -c "npx prisma migrate deploy && npx prisma db seed && npx tsx src/server.ts"
     environment: *api-env
-    ports:
-      - "4000:4000"
+    # Not published: all traffic goes through nginx on :8080 (one trusted proxy hop for req.ip).
+    # For debugging only, uncomment to reach the API directly:
+    # ports:
+    #   - "4000:4000"
     depends_on:
       postgres:
         condition: service_healthy

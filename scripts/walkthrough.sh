@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Manual API walkthrough: Anika creates + uploads + submits, Dev and Meera approve, Farah approves -> APPROVED.
-# Usage: scripts/walkthrough.sh [base_url]   (default http://localhost:4000; needs curl + jq)
+# Usage: scripts/walkthrough.sh [base_url]   (default http://localhost:8080 = nginx; needs curl + jq)
 set -euo pipefail
-BASE="${1:-http://localhost:4000}"
+BASE="${1:-http://localhost:8080}" # via nginx; CI passes http://localhost:4000 (API run directly)
 CSV="$(dirname "$0")/../samples/valid-10.csv"
 
 uid() { curl -sf "$BASE/api/auth/demo-users" | jq -r --arg n "$1" '.users[] | select(.name == $n) | .id'; }

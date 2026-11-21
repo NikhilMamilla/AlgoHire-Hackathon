@@ -10,6 +10,7 @@ export const fixedWindowLimit =
   (prefix: string, limit: () => number, windowSec = 60): RequestHandler =>
   async (req, res, next) => {
     const nowSec = Math.floor(Date.now() / 1000);
+    // Keyed on req.ip only (resolved by Express with `trust proxy` = 1 hop, i.e. nginx); never the raw X-Forwarded-For.
     const key = `rl:${prefix}:${req.ip}:${Math.floor(nowSec / windowSec)}`;
     let count: number;
     try {
@@ -19,7 +20,9 @@ export const fixedWindowLimit =
       ]);
       count = Number(result?.[0]?.[1] ?? 0);
     } catch (err) {
-      logger.warn({ err }, 'rate limiter unavailable; allowing request');
+      // Deliberate fail-open: if Redis is down, keeping certificate verification available matters more than
+      // strict limiting (numbers are 50-bit random, so a short unlimited window doesn't enable enumeration).
+      logger.warn({ err, ip: req.ip }, 'rate limiter unavailable (Redis); failing open and allowing request');
       return next();
     }
     const max = limit();
